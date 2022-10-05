@@ -10,6 +10,7 @@ class Shader {
     public:
         Shader(string vertexPath, string fragmentPath);
         void use();
+        void setMat4(const string &name, mat4 value);
 
     private:
         unsigned int shaderID;

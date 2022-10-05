@@ -2,18 +2,7 @@
 #define MESH_HPP
 
 #include "Shader.hpp"
-
-struct Vertex {
-    vec3 pos;
-    vec3 normal;
-    vec2 texCoords;
-};
-
-struct Texture {
-    unsigned int id;
-    string type;
-    string path;
-};
+#include "Shape.hpp"
 
 class Mesh {
     public:
@@ -21,12 +10,17 @@ class Mesh {
         vector<unsigned int> indices;
         vector<Texture> textures;
 
-        Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures);
+        //We don't take textures from the constructor, we set them later using explicit setters 
+        Mesh(vector<Vertex> vertices, vector<unsigned int> indices);
         void draw(Shader &shader);
+
     private:
         //Rendering Data
         unsigned int VAO, VBO, EBO;
         void setupMesh();
+
+        //Extracting a new texture from an image file 
+        unsigned int getTextureFromFile(string fileName);
 };
 
 #endif

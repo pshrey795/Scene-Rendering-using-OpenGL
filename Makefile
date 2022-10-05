@@ -1,18 +1,26 @@
-CC=g++
-CFLAGS=-lglfw -lGL -lGLU -lglut -lassimp
-OBJECTS=glad/glad.o
-WIDTH=1920
-HEIGHT=1080
+CC = g++ -O3
+CC_FLAGS = -Wall -g
+LD_FLAGS = -lGL -lGLU -lglut -lglfw -lassimp
 
-compile: main.cpp src/*.cpp
-	$(CC) -o draw main.cpp src/*.cpp $(OBJECTS) $(CFLAGS) 
+EXEC = draw
+SOURCES = $(wildcard src/*.cpp)
+OBJECTS = $(SOURCES:.cpp=.o)
+EXT = external/glad.o
+WIDTH = 1920
+HEIGHT = 1080
 
-run: main.cpp src/*.cpp
-	$(CC) -o draw main.cpp src/*.cpp $(OBJECTS) $(CFLAGS) 
-	./draw $(WIDTH) $(HEIGHT)
+$(EXEC): $(OBJECTS)
+	$(CC) $(OBJECTS) $(EXT) main.cpp -o $(EXEC) $(LD_FLAGS)
 
-draw: draw
-	./draw $(WIDTH) $(HEIGHT)
+%.o: %.cpp
+	$(CC) $(CC_FLAGS) -c $< -o $@
 
-clean:
-	rm -f draw
+run: $(OBJECTS)
+	$(CC) $(OBJECTS) $(EXT) main.cpp -o $(EXEC) $(LD_FLAGS)
+	./$(EXEC) $(WIDTH) $(HEIGHT)
+
+show: $(EXEC)
+	./$(EXEC) $(WIDTH) $(HEIGHT) 
+
+clean: 
+	rm -f $(EXEC) $(OBJECTS)

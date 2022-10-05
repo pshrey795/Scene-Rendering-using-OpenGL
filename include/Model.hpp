@@ -8,8 +8,13 @@
 
 class Model{
     public:
+        Model();
         Model(string obj_path);
         void draw(Shader &shader);
+
+        //Model Transformations
+        mat4 localTransform;
+        void updateTransform(mat4 transform);
     
     private:
         vector<Mesh> meshes;

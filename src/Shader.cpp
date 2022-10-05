@@ -67,3 +67,7 @@ Shader::Shader(string vertexPath, string fragmentPath){
 void Shader::use(){
     glUseProgram(shaderID);
 }
+
+void Shader::setMat4(const string &name, mat4 value){
+    glUniformMatrix4fv(glGetUniformLocation(shaderID, name.c_str()), 1, GL_FALSE, value_ptr(value));
+}
