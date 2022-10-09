@@ -2,6 +2,9 @@
 
 string texDir = "assets/textures/";
 string objDir = "assets/objects/";
+string shaderDir = "shaders/";
+
+int numTex = 0;
 
 //Overload << operator for vec2, vec3
 std::ostream& operator<<(std::ostream& os, const vec2& v){

@@ -8,8 +8,8 @@ Shader::Shader(string vertexPath, string fragmentPath){
     vShaderFile.exceptions (ifstream::failbit | ifstream::badbit);
     fShaderFile.exceptions (ifstream::failbit | ifstream::badbit);
     try {
-        vShaderFile.open(vertexPath);
-        fShaderFile.open(fragmentPath);
+        vShaderFile.open(shaderDir + vertexPath);
+        fShaderFile.open(shaderDir + fragmentPath);
         stringstream vShaderStream, fShaderStream;
         vShaderStream << vShaderFile.rdbuf();
         fShaderStream << fShaderFile.rdbuf();	
@@ -70,4 +70,12 @@ void Shader::use(){
 
 void Shader::setMat4(const string &name, mat4 value){
     glUniformMatrix4fv(glGetUniformLocation(shaderID, name.c_str()), 1, GL_FALSE, value_ptr(value));
+}
+
+void Shader::setInt(const string &name, int value){
+    glUniform1i(glGetUniformLocation(shaderID, name.c_str()), value);
+}
+
+void Shader::setVec3(const string &name, vec3 value){
+    glUniform3fv(glGetUniformLocation(shaderID, name.c_str()), 1, value_ptr(value));
 }

@@ -6,9 +6,13 @@ Scene::Scene(int argc, char** argv){
     gui = new GUI("Test Window", stoi(argv[1]), stoi(argv[2]));
 
     //User defined initializations
-    Model model = Model();
-    sceneObjects.push_back(model);
-    shader = new Shader("shaders/vert1.glsl", "shaders/frag1.glsl");
+    createTerrain();
+    createLampPosts();
+    createStatues();
+
+    shaders[BASIC] = new Shader("Basic.vs", "Basic.fs");
+    shaders[TEXTURE] = new Shader("Textured.vs", "Textured.fs");
+    // shaders[CubeMap] = new Shader("CubeMap.vs", "CubeMap.fs");
 }
 
 void Scene::init(){
@@ -41,11 +45,136 @@ void Scene::run(){
 }
 
 void Scene::draw(){
-    shader->use();
-    shader->setMat4("view", gui->camera->getViewMatrix());
-    shader->setMat4("projection", gui->camera->getPerspectiveMatrix()); 
-    for(unsigned int i = 0; i < sceneObjects.size(); i++){
-        shader->setMat4("model", sceneObjects[i].localTransform);
-        sceneObjects[i].draw(*shader);
+    //Terrain
+    Shader*& currentShader = shaders[TEXTURE];
+    currentShader->use();
+    currentShader->setMat4("view", gui->camera->getViewMatrix());
+    currentShader->setMat4("projection", gui->camera->getPerspectiveMatrix()); 
+    for(unsigned int i = 0; i < terrain.size(); i++){
+        currentShader->setMat4("model", terrain[i].localTransform);
+        terrain[i].draw(*currentShader, TEXTURE);
+    }
+
+    //Lamp Posts
+    Shader*& currentShader2 = shaders[BASIC];
+    currentShader2->use();
+    currentShader2->setMat4("view", gui->camera->getViewMatrix());
+    currentShader2->setMat4("projection", gui->camera->getPerspectiveMatrix());
+    for(unsigned int i = 0; i < lampPosts.size(); i++){
+        currentShader2->setMat4("model", lampPosts[i].localTransform);
+        lampPosts[i].draw(*currentShader2, BASIC);
+    }
+
+    //Statues
+    for(unsigned int i = 0; i < statueBases.size(); i++){
+        currentShader2->setMat4("model", statueBases[i].localTransform);
+        statueBases[i].draw(*currentShader2, BASIC);
+    }
+}
+
+//Drawing routines
+void Scene::createTerrain(){
+    //Grass
+    Model grass = Model(GRASS, texUnit);
+    mat4 transform = mat4(1.0f);
+    transform = translate(transform, vec3(40.0f, 0.0f, -100.0f));
+    transform = rotate(transform, radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
+    transform = scale(transform, vec3(200.0f, 200.0f, 1.0f));
+    grass.updateTransform(transform);
+    terrain.push_back(grass);
+
+    //Lake 
+    Model lake = Model(LAKE, texUnit);
+    transform = mat4(1.0f);
+    transform = translate(transform, vec3(40.0f, 0.1f, -100.0f));
+    transform = rotate(transform, radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
+    transform = scale(transform, vec3(20.0f, 60.0f, 1.0f));
+    lake.updateTransform(transform);
+    terrain.push_back(lake);
+
+    //Roads
+    Model road1 = Model(ROAD, texUnit);
+    transform = mat4(1.0f);
+    transform = translate(transform, vec3(0.0f, 0.1f, -80.0f));
+    transform = rotate(transform, radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
+    transform = scale(transform, vec3(20.0f, 80.0f, 1.0f));
+    road1.updateTransform(transform);
+    terrain.push_back(road1);
+
+    Model road2 = Model(ROAD, texUnit);
+    transform = mat4(1.0f);
+    transform = translate(transform, vec3(20.0f, 0.1f, -180.0f));
+    transform = rotate(transform, radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
+    transform = scale(transform, vec3(40.0f, 20.0f, 1.0f));
+    road2.updateTransform(transform);
+    terrain.push_back(road2);
+
+    Model road3 = Model(ROAD, texUnit);
+    transform = mat4(1.0f);
+    transform = translate(transform, vec3(80.0f, 0.1f, -120.0f));
+    transform = rotate(transform, radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
+    transform = scale(transform, vec3(20.0f, 80.0f, 1.0f));
+    road3.updateTransform(transform);
+    terrain.push_back(road3);
+
+    Model road4 = Model(ROAD, texUnit);
+    transform = mat4(1.0f);
+    transform = translate(transform, vec3(60.0f, 0.1f, -20.0f));
+    transform = rotate(transform, radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
+    transform = scale(transform, vec3(40.0f, 20.0f, 1.0f));
+    road4.updateTransform(transform);
+    terrain.push_back(road4);
+}   
+
+void Scene::createLampPosts(){
+    //24 Cylinders in a 6 * 4 grid 
+    for(int i = 0; i < 6;i++){
+        for(int j = 0; j < 4;j++){
+            Model lampPost = Model("cylinder.obj");
+            mat4 transform = mat4(1.0f);
+            transform = translate(transform, vec3(j * 40.0f - 20.0f, 5.0f, i * -40.0f));
+            transform = scale(transform, vec3(1.0f, 10.0f, 1.0f));
+            lampPost.updateTransform(transform);
+            lampPosts.push_back(lampPost);
+        }
+    }
+}
+
+void Scene::createStatues(){
+    for(int i = 0; i < 7; i++){
+        if(i==0 || i==6){
+            double zCoord = (i==0) ? 0.0f : -200.0f;
+            for(int j=0;j<3;j++){
+                Model statueBase = Model("cuboid.obj");
+                mat4 transform = mat4(1.0f);
+                transform = translate(transform, vec3(j * 40.0f, 5.0f, zCoord));
+                transform = rotate(transform, radians(45.0f), vec3(0.0f, 1.0f, 0.0f));
+                transform = scale(transform, vec3(3.0f, 10.0f, 3.0f));
+                statueBase.updateTransform(transform);
+                statueBases.push_back(statueBase);
+            }
+        }else if(i==1 || i==3 || i==5){
+            double zCoord = ((i==1) ? (-20.0f) : ((i==3) ? (-100.0f) : (-180.0f)));
+            for(int j=0;j<2;j++){
+                Model statueBase = Model("cuboid.obj");
+                mat4 transform = mat4(1.0f);
+                transform = translate(transform, vec3(j * 120.0f - 20.0f, 5.0f, zCoord));
+                transform = rotate(transform, radians(45.0f), vec3(0.0f, 1.0f, 0.0f));
+                transform = scale(transform, vec3(3.0f, 10.0f, 3.0f));
+                statueBase.updateTransform(transform);
+                statueBases.push_back(statueBase);
+            }
+        }else{
+            double zCoord = (i==2) ? -60.0f : -140.0f;
+            for(int j=0;j<4;j++){
+                Model statueBase = Model("cuboid.obj");
+                mat4 transform = mat4(1.0f);
+                transform = translate(transform, vec3(j * 40.0f - 20.0f, 5.0f, zCoord));
+                transform = rotate(transform, radians(45.0f), vec3(0.0f, 1.0f, 0.0f));
+                transform = scale(transform, vec3(3.0f, 10.0f, 3.0f));
+                statueBase.updateTransform(transform);
+                statueBases.push_back(statueBase);
+            }
+        }
     }
 }

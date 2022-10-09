@@ -15,6 +15,7 @@ using namespace glm;
 
 extern string texDir;
 extern string objDir;
+extern string shaderDir;
 
 //Overload << operator for vec2, vec3
 std::ostream& operator<<(std::ostream& os, const vec2& v);

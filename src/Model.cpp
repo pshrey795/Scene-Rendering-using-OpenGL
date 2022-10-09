@@ -1,23 +1,76 @@
 #include "../include/Model.hpp"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "../external/stb_image.h"
+
 Model::Model(){
-    vector<Vertex> vertices; 
-    vector<unsigned int> indices;
 
-    vertices.push_back(Vertex(vec3(0.0f, 0.0f, 0.0f)));
-    vertices.push_back(Vertex(vec3(1.0f, 0.0f, 0.0f)));
-    vertices.push_back(Vertex(vec3(1.0f, 1.0f, 0.0f)));
-    indices.push_back(0);
-    indices.push_back(1);
-    indices.push_back(2);
-
-    meshes.push_back(Mesh(vertices, indices));
-
-    this->localTransform = mat4(1.0f);
 }
 
-Model::Model(string obj_path){
-    loadModel(obj_path);
+Model::Model(ModelType modelType, unordered_map<ModelType, pair<int,unsigned int>> &texUnit){
+    vector<Vertex> vertices;
+    vector<unsigned int> indices;
+    vector<Texture> textures; 
+    this->localTransform = mat4(1.0f);
+
+    //Terrain
+    switch(modelType){
+        case GRASS:{
+            buildSquare(vertices, indices);
+            Texture texture;
+            if(texUnit.find(GRASS) == texUnit.end()){
+                int n = texUnit.size();
+                texture.texUnit = n;
+                texture.id = getTextureFromFile("grass.jpeg", n);
+                texUnit.insert({GRASS, make_pair(n,texture.id)});
+            }else{
+                auto p = texUnit[GRASS];
+                texture.texUnit = p.first;
+                texture.id = p.second;
+            }
+            texture.type = DIFFUSE;
+            textures.push_back(texture);
+            break;
+        }case LAKE:{
+            buildSquare(vertices, indices);
+            Texture texture;
+            if(texUnit.find(LAKE) == texUnit.end()){
+                int n = texUnit.size();
+                texture.texUnit = n;
+                texture.id = getTextureFromFile("water.jpeg", n);
+                texUnit.insert({LAKE, make_pair(n,texture.id)});
+            }else{
+                auto p = texUnit[LAKE];
+                texture.texUnit = p.first;
+                texture.id = p.second;
+            }
+            texture.type = DIFFUSE;
+            textures.push_back(texture);
+            break;
+        }case ROAD:{
+            buildSquare(vertices, indices);
+            Texture texture;
+            if(texUnit.find(ROAD) == texUnit.end()){
+                int n = texUnit.size();
+                texture.texUnit = n;
+                texture.id = getTextureFromFile("road.jpeg", n);
+                texUnit.insert({ROAD, make_pair(n,texture.id)});
+            }else{
+                auto p = texUnit[ROAD];
+                texture.texUnit = p.first;
+                texture.id = p.second;
+            }
+            texture.type = DIFFUSE;
+            textures.push_back(texture);
+            break;
+        }
+    }
+
+    meshes.push_back(Mesh(vertices, indices, textures));
+}
+
+Model::Model(string obj_path, ModelType modelType){
+    loadModel(objDir + obj_path);
     this->localTransform = mat4(1.0f);
 }
 
@@ -76,15 +129,48 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
             indices.push_back(face.mIndices[j]);
         }
     }
-    return Mesh(vertices, indices);
+
+    return Mesh(vertices, indices, textures);
 }
 
-void Model::draw(Shader &shader) {
+void Model::draw(Shader &shader, ShaderType shaderType) {
     for (unsigned int i = 0; i < meshes.size(); i++) {
-        meshes[i].draw(shader);
+        meshes[i].draw(shader,shaderType);
     }
 }
 
 void Model::updateTransform(mat4 transform){
-    this->localTransform *= transform;
+    this->localTransform = transform;
+}
+
+unsigned int Model::getTextureFromFile(string fileName, int texUnit){
+    stbi_set_flip_vertically_on_load(true);
+    string path = texDir + fileName;
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    int width, height, nrComponents;
+    unsigned char *data = stbi_load(path.c_str(), &width, &height, &nrComponents, 0);
+    if(data){
+        GLenum format;
+        if (nrComponents == 1){
+            format = GL_RED;
+        }else if (nrComponents == 3){
+            format = GL_RGB;
+        }else if (nrComponents == 4){
+            format = GL_RGBA;
+        }
+        glActiveTexture(GL_TEXTURE0 + texUnit);
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        stbi_image_free(data);
+    }else{
+        cout << "Texture failed to load at path: " << path << endl;
+        stbi_image_free(data);
+    }
+    return textureID;
 }

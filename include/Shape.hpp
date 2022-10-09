@@ -42,10 +42,23 @@ enum TextureType {
 struct Texture {
     unsigned int id;
     TextureType type;
-    string path;
+    int texUnit; 
 };
 
-void buildCylinder(vector<Vertex> &vertices, vector<unsigned int> &indices);
+enum ModelType {
+    NONE,
+    GRASS, 
+    ROAD, 
+    LAKE, 
+    CUBEFACE,
+};
+
+enum ShaderType{
+    BASIC,
+    TEXTURE,
+    CUBEMAP
+};
+
 void buildSquare(vector<Vertex> &vertices, vector<unsigned int> &indices);
 
 #endif

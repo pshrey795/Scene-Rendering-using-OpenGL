@@ -16,7 +16,7 @@ enum Camera_Movement {
 // Default camera values
 const float YAW         = -90.0f;
 const float PITCH       =  0.0f;
-const float SPEED       =  2.5f;
+const float SPEED       =  25.0f;
 const float SENSITIVITY =  0.1f;
 const float ZOOM        =  45.0f;
 
@@ -43,7 +43,7 @@ public:
     float MouseSensitivity;
 
     //Constructors
-    Camera(vec3 position, vec3 target, vec3 up, float width, float height, float near = 0.1f, float far = 500.0f, float yaw = YAW, float pitch = PITCH);
+    Camera(vec3 position, vec3 target, vec3 up, float width, float height, float near = 0.1f, float far = 1000.0f, float yaw = YAW, float pitch = PITCH);
 
     //Returns the view matrix for vertex shader
     mat4 getViewMatrix();

@@ -25,7 +25,7 @@ mat4 Camera::getPerspectiveMatrix(){
 }
 
 void Camera::processKeyInput(Camera_Movement direction, float deltaTime){
-    float velocity = MovementSpeed * deltaTime;
+    float velocity = 4.0f * MovementSpeed * deltaTime;
     if(direction == FORWARD){
         Position += Front * velocity;
     }else if(direction == BACKWARD){
