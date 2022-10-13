@@ -44,7 +44,7 @@ void Mesh::setupMesh(){
 void Mesh::draw(Shader &shader, ShaderType shaderType){
     switch(shaderType){
         case BASIC: {
-            shader.setVec3("color", vec3(0.0f, 0.0f, 0.0f));
+            shader.setVec3("color", vec3(1.0f, 1.0f, 1.0f));
             break;
         }case TEXTURE: {
             glActiveTexture(GL_TEXTURE0 + textures[0].texUnit);

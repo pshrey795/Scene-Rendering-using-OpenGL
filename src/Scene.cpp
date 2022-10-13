@@ -10,6 +10,9 @@ Scene::Scene(int argc, char** argv){
     createLampPosts();
     createStatues();
 
+    //For testing purposes
+    // testModel = Model("bunny.obj");
+
     shaders[BASIC] = new Shader("Basic.vs", "Basic.fs");
     shaders[TEXTURE] = new Shader("Textured.vs", "Textured.fs");
     // shaders[CubeMap] = new Shader("CubeMap.vs", "CubeMap.fs");
@@ -70,59 +73,47 @@ void Scene::draw(){
         currentShader2->setMat4("model", statueBases[i].localTransform);
         statueBases[i].draw(*currentShader2, BASIC);
     }
+    for(unsigned int i = 0; i < statueHeads.size(); i++){
+        currentShader2->setMat4("model", statueHeads[i].localTransform);
+        statueHeads[i].draw(*currentShader2, BASIC);
+    }
+
+    //For testing only
+    // Shader*& testShader = shaders[BASIC];
+    // testShader->use();
+    // testShader->setMat4("view", gui->camera->getViewMatrix());
+    // testShader->setMat4("projection", gui->camera->getPerspectiveMatrix());
+    // testShader->setMat4("model", testModel.localTransform);
+    // testModel.draw(*testShader, BASIC);
 }
 
 //Drawing routines
 void Scene::createTerrain(){
     //Grass
     Model grass = Model(GRASS, texUnit);
-    mat4 transform = mat4(1.0f);
-    transform = translate(transform, vec3(40.0f, 0.0f, -100.0f));
-    transform = rotate(transform, radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
-    transform = scale(transform, vec3(200.0f, 200.0f, 1.0f));
-    grass.updateTransform(transform);
+    grass.updateTransform(vec3(200.0f, 200.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(40.0f, 0.0f, -100.0f));
     terrain.push_back(grass);
 
     //Lake 
     Model lake = Model(LAKE, texUnit);
-    transform = mat4(1.0f);
-    transform = translate(transform, vec3(40.0f, 0.1f, -100.0f));
-    transform = rotate(transform, radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
-    transform = scale(transform, vec3(20.0f, 60.0f, 1.0f));
-    lake.updateTransform(transform);
+    lake.updateTransform(vec3(20.0f, 60.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(40.0f, 0.1f, -100.0f));
     terrain.push_back(lake);
 
     //Roads
     Model road1 = Model(ROAD, texUnit);
-    transform = mat4(1.0f);
-    transform = translate(transform, vec3(0.0f, 0.1f, -80.0f));
-    transform = rotate(transform, radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
-    transform = scale(transform, vec3(20.0f, 80.0f, 1.0f));
-    road1.updateTransform(transform);
+    road1.updateTransform(vec3(20.0f, 80.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(0.0f, 0.1f, -80.0f));
     terrain.push_back(road1);
 
     Model road2 = Model(ROAD, texUnit);
-    transform = mat4(1.0f);
-    transform = translate(transform, vec3(20.0f, 0.1f, -180.0f));
-    transform = rotate(transform, radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
-    transform = scale(transform, vec3(40.0f, 20.0f, 1.0f));
-    road2.updateTransform(transform);
+    road2.updateTransform(vec3(40.0f, 20.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(20.0f, 0.1f, -180.0f));
     terrain.push_back(road2);
 
     Model road3 = Model(ROAD, texUnit);
-    transform = mat4(1.0f);
-    transform = translate(transform, vec3(80.0f, 0.1f, -120.0f));
-    transform = rotate(transform, radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
-    transform = scale(transform, vec3(20.0f, 80.0f, 1.0f));
-    road3.updateTransform(transform);
+    road3.updateTransform(vec3(20.0f, 80.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(80.0f, 0.1f, -120.0f));
     terrain.push_back(road3);
 
     Model road4 = Model(ROAD, texUnit);
-    transform = mat4(1.0f);
-    transform = translate(transform, vec3(60.0f, 0.1f, -20.0f));
-    transform = rotate(transform, radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
-    transform = scale(transform, vec3(40.0f, 20.0f, 1.0f));
-    road4.updateTransform(transform);
+    road4.updateTransform(vec3(40.0f, 20.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(60.0f, 0.1f, -20.0f));
     terrain.push_back(road4);
 }   
 
@@ -131,10 +122,7 @@ void Scene::createLampPosts(){
     for(int i = 0; i < 6;i++){
         for(int j = 0; j < 4;j++){
             Model lampPost = Model("cylinder.obj");
-            mat4 transform = mat4(1.0f);
-            transform = translate(transform, vec3(j * 40.0f - 20.0f, 5.0f, i * -40.0f));
-            transform = scale(transform, vec3(1.0f, 10.0f, 1.0f));
-            lampPost.updateTransform(transform);
+            lampPost.updateTransform(vec3(1.0f, 10.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), 0.0f, vec3(j * 40.0f - 20.0f, 5.0f, i * -40.0f));
             lampPosts.push_back(lampPost);
         }
     }
@@ -146,35 +134,49 @@ void Scene::createStatues(){
             double zCoord = (i==0) ? 0.0f : -200.0f;
             for(int j=0;j<3;j++){
                 Model statueBase = Model("cuboid.obj");
-                mat4 transform = mat4(1.0f);
-                transform = translate(transform, vec3(j * 40.0f, 5.0f, zCoord));
-                transform = rotate(transform, radians(45.0f), vec3(0.0f, 1.0f, 0.0f));
-                transform = scale(transform, vec3(3.0f, 10.0f, 3.0f));
-                statueBase.updateTransform(transform);
+                statueBase.updateTransform(vec3(3.0f, 10.0f, 3.0f), vec3(0.0f, 1.0f, 0.0f), 45.0f, vec3(j * 40.0f, 5.0f, zCoord));
                 statueBases.push_back(statueBase);
+                createStatueHead(0.0f, vec3(j * 40.0f, 15.0f, zCoord));
             }
         }else if(i==1 || i==3 || i==5){
             double zCoord = ((i==1) ? (-20.0f) : ((i==3) ? (-100.0f) : (-180.0f)));
             for(int j=0;j<2;j++){
                 Model statueBase = Model("cuboid.obj");
-                mat4 transform = mat4(1.0f);
-                transform = translate(transform, vec3(j * 120.0f - 20.0f, 5.0f, zCoord));
-                transform = rotate(transform, radians(45.0f), vec3(0.0f, 1.0f, 0.0f));
-                transform = scale(transform, vec3(3.0f, 10.0f, 3.0f));
-                statueBase.updateTransform(transform);
+                statueBase.updateTransform(vec3(3.0f, 10.0f, 3.0f), vec3(0.0f, 1.0f, 0.0f), 45.0f, vec3(j * 120.0f - 20.0f, 5.0f, zCoord));
                 statueBases.push_back(statueBase);
+                createStatueHead(0.0f, vec3(j * 120.0f - 20.0f, 15.0f, zCoord));
             }
         }else{
             double zCoord = (i==2) ? -60.0f : -140.0f;
             for(int j=0;j<4;j++){
                 Model statueBase = Model("cuboid.obj");
-                mat4 transform = mat4(1.0f);
-                transform = translate(transform, vec3(j * 40.0f - 20.0f, 5.0f, zCoord));
-                transform = rotate(transform, radians(45.0f), vec3(0.0f, 1.0f, 0.0f));
-                transform = scale(transform, vec3(3.0f, 10.0f, 3.0f));
-                statueBase.updateTransform(transform);
+                statueBase.updateTransform(vec3(3.0f, 10.0f, 3.0f), vec3(0.0f, 1.0f, 0.0f), 45.0f, vec3(j * 40.0f - 20.0f, 5.0f, zCoord));
                 statueBases.push_back(statueBase);
+                createStatueHead(0.0f, vec3(j * 40.0f - 20.0f, 15.0f, zCoord));
             }
         }
     }
+}
+
+void Scene::createStatueHead(float rotateAngle, vec3 translate){
+    Model statueHead; 
+    vec3 scaling; 
+    int randInt = rand() % 3;
+    switch(randInt){
+        case 0: {
+            statueHead = Model("bunny.obj");
+            scaling = vec3(3.0f, 3.0f, 3.0f);
+            break;
+        } case 1: {
+            statueHead = Model("armadillo.obj");
+            scaling = vec3(5.0f, 5.0f, 5.0f);
+            break;
+        } case 2: {
+            statueHead = Model("dragon.obj");
+            scaling = vec3(1.0f, 1.0f, 1.0f);
+            break;
+        }
+    }
+    statueHead.updateTransform(scaling, vec3(0.0f, 1.0f, 0.0f), rotateAngle, translate);
+    statueHeads.push_back(statueHead);
 }

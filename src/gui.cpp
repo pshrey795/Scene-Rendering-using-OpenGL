@@ -26,7 +26,7 @@ GUI::GUI(const char* winTitle, int width, int height){
     this->height = height;
 
     //Loading Camera
-    camera = new Camera(vec3(0.0f, 10.0f, -20.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f), width, height);
+    camera = new Camera(vec3(0.0f, 10.0f, 20.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f), width, height);
 
     allowMouse = false; 
 }

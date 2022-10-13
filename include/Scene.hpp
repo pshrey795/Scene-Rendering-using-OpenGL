@@ -10,6 +10,9 @@ class Scene {
     private:
         GUI* gui;
 
+        //For testing purposes
+        Model testModel;
+
         //Objects of the scene
         //Lamp Post(Cylinder) * 24
         vector<Model> lampPosts;
@@ -31,6 +34,7 @@ class Scene {
         void createTerrain();
         void createLampPosts();
         void createStatues();
+        void createStatueHead(float rotateAngle, vec3 translate); 
          
     public:
         Scene();
