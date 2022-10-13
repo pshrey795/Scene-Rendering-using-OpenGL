@@ -13,6 +13,10 @@ Mesh::Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture
     setupMesh();
 }
 
+void Mesh::addTransform(mat4 transform){
+    modelTransforms.push_back(transform);
+}
+
 void Mesh::setupMesh(){
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -71,6 +75,9 @@ void Mesh::draw(Shader &shader, ModelType modelType, ShaderType shaderType){
     }
 
     glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+    for(auto m : modelTransforms){
+        shader.setMat4("model", m);
+        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+    }
     glBindVertexArray(0);
 }

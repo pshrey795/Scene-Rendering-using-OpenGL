@@ -15,21 +15,31 @@ class Scene {
 
         //Objects of the scene
         //Lamp Post(Cylinder) * 24
-        vector<Model> lampPosts;
+        Model lampPost;
         //Cuboidal Boxes * 20
-        vector<Model> statueBases;
+        Model statueBase;
         //Obj Models
-        vector<Model> statueHeads;
+        Model bunny; 
+        Model armadillo; 
+        Model dragon; 
+        Model david; 
         //Road + Grass + Lake
-        vector<Model> terrain;
+        Model grass;
+        Model lake;
+        Model road;
         //Sun + 25 * Over each lamp post
         vector<Model> lightSources;
         //6 * Cube Faces
         vector<Model> skyBox;
 
+        //Book-keeping for Shaders/Textures
         unordered_map<ShaderType, Shader*> shaders;
         unordered_map<ModelType, pair<int, unsigned int>> texUnit;
          
+        //Time keeping
+        int frameCounter;
+        float currentTime;
+
         //Separate model creating functions
         void createTerrain();
         void createLampPosts();

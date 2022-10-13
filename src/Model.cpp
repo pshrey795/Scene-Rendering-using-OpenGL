@@ -11,7 +11,6 @@ Model::Model(ModelType modelType, unordered_map<ModelType, pair<int,unsigned int
     vector<Vertex> vertices;
     vector<unsigned int> indices;
     vector<Texture> textures; 
-    this->localTransform = mat4(1.0f);
     this->modelType = modelType;
 
     //Terrain
@@ -72,7 +71,6 @@ Model::Model(ModelType modelType, unordered_map<ModelType, pair<int,unsigned int
 
 Model::Model(string obj_path, ModelType modelType){
     loadModel(objDir + obj_path);
-    this->localTransform = mat4(1.0f);
     this->modelType = modelType;
     
     //Base Size depends on the Model
@@ -143,17 +141,10 @@ void Model::draw(Shader &shader, ShaderType shaderType) {
     }
 }
 
-void Model::updateTransform(mat4 transform){
-    this->localTransform = transform * this->localTransform;
-}
-
-void Model::updateTransform(vec3 scaling, vec3 rotateAxis, float rotateAngle, vec3 translation){
-    mat4 transform = mat4(1.0f);
-    transform = translate(transform, translation);
-    transform = rotate(transform, (radians(rotateAngle)), rotateAxis);
-    transform = scale(transform, scaling);
-    //Order of application: scale -> rotate -> translate
-    this->localTransform = transform * this->localTransform;
+void Model::addTransform(mat4 model){
+    for(int i = 0; i < meshes.size(); i++){
+        meshes[i].addTransform(model);
+    }
 }
 
 unsigned int Model::getTextureFromFile(string fileName, int texUnit){

@@ -4,6 +4,8 @@ Scene::Scene(int argc, char** argv){
     //Essential initializations
     this->init();
     gui = new GUI("Test Window", stoi(argv[1]), stoi(argv[2]));
+    currentTime = 0.0f;
+    frameCounter = 0;
 
     //User defined initializations
     createTerrain();
@@ -39,6 +41,10 @@ void Scene::run(){
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        //Update time
+        currentTime = glfwGetTime();
+        frameCounter = (frameCounter + 1) % 60;
+
         //Drawing Space
         this->draw();
 
@@ -54,30 +60,39 @@ void Scene::draw(){
     currentShader->use();
     currentShader->setMat4("view", gui->camera->getViewMatrix());
     currentShader->setMat4("projection", gui->camera->getPerspectiveMatrix()); 
-    for(unsigned int i = 0; i < terrain.size(); i++){
-        currentShader->setMat4("model", terrain[i].localTransform);
-        terrain[i].draw(*currentShader, TEXTURE);
-    }
+
+    //Grass
+    grass.draw(*currentShader, TEXTURE);
+
+    //Lake
+    lake.draw(*currentShader, TEXTURE);
+
+    //Roads
+    road.draw(*currentShader, TEXTURE);
 
     //Lamp Posts
     Shader*& currentShader2 = shaders[BASIC];
     currentShader2->use();
     currentShader2->setMat4("view", gui->camera->getViewMatrix());
     currentShader2->setMat4("projection", gui->camera->getPerspectiveMatrix());
-    for(unsigned int i = 0; i < lampPosts.size(); i++){
-        currentShader2->setMat4("model", lampPosts[i].localTransform);
-        lampPosts[i].draw(*currentShader2, BASIC);
-    }
+    lampPost.draw(*currentShader2, BASIC);
 
     //Statues
-    for(unsigned int i = 0; i < statueBases.size(); i++){
-        currentShader2->setMat4("model", statueBases[i].localTransform);
-        statueBases[i].draw(*currentShader2, BASIC);
-    }
-    for(unsigned int i = 0; i < statueHeads.size(); i++){
-        currentShader2->setMat4("model", statueHeads[i].localTransform);
-        statueHeads[i].draw(*currentShader2, BASIC);
-    }
+    //Statue Bases
+    statueBase.draw(*currentShader2, BASIC);
+
+    //Statue Heads
+    //Bunny
+    bunny.draw(*currentShader2, BASIC);
+
+    //Armadillo
+    armadillo.draw(*currentShader2, BASIC);
+
+    //Dragon
+    dragon.draw(*currentShader2, BASIC);
+
+    //David
+    david.draw(*currentShader2, BASIC);
 
     //For testing only
     // Shader*& testShader = shaders[BASIC];
@@ -91,68 +106,56 @@ void Scene::draw(){
 //Drawing routines
 void Scene::createTerrain(){
     //Grass
-    Model grass = Model(GRASS, texUnit);
-    grass.updateTransform(vec3(200.0f, 200.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(40.0f, 0.0f, -100.0f));
-    terrain.push_back(grass);
+    grass = Model(GRASS, texUnit);
+    grass.addTransform(getTransform(vec3(200.0f, 200.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(40.0f, 0.0f, -100.0f)));
 
     //Lake 
-    Model lake = Model(LAKE, texUnit);
-    lake.updateTransform(vec3(20.0f, 60.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(40.0f, 0.1f, -100.0f));
-    terrain.push_back(lake);
+    lake = Model(LAKE, texUnit);
+    lake.addTransform(getTransform(vec3(20.0f, 60.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(40.0f, 0.1f, -100.0f)));
 
     //Roads
-    Model road1 = Model(ROAD, texUnit);
-    road1.updateTransform(vec3(20.0f, 80.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(0.0f, 0.1f, -80.0f));
-    terrain.push_back(road1);
-
-    Model road2 = Model(ROAD, texUnit);
-    road2.updateTransform(vec3(40.0f, 20.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(20.0f, 0.1f, -180.0f));
-    terrain.push_back(road2);
-
-    Model road3 = Model(ROAD, texUnit);
-    road3.updateTransform(vec3(20.0f, 80.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(80.0f, 0.1f, -120.0f));
-    terrain.push_back(road3);
-
-    Model road4 = Model(ROAD, texUnit);
-    road4.updateTransform(vec3(40.0f, 20.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(60.0f, 0.1f, -20.0f));
-    terrain.push_back(road4);
+    road = Model(ROAD, texUnit);
+    mat4 transform; 
+    road.addTransform(getTransform(vec3(20.0f, 80.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(0.0f, 0.1f, -80.0f)));
+    road.addTransform(getTransform(vec3(40.0f, 20.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(20.0f, 0.1f, -180.0f)));
+    road.addTransform(getTransform(vec3(20.0f, 80.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(80.0f, 0.1f, -120.0f)));
+    road.addTransform(getTransform(vec3(40.0f, 20.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(60.0f, 0.1f, -20.0f)));
 }   
 
 void Scene::createLampPosts(){
-    //24 Cylinders in a 6 * 4 grid 
+    //24 Cylinders in a 6 * 4 grid
+    lampPost = Model("cylinder.obj"); 
     for(int i = 0; i < 6;i++){
         for(int j = 0; j < 4;j++){
-            Model lampPost = Model("cylinder.obj");
-            lampPost.updateTransform(vec3(1.0f, 10.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), 0.0f, vec3(j * 40.0f - 20.0f, 5.0f, i * -40.0f));
-            lampPosts.push_back(lampPost);
+            lampPost.addTransform(getTransform(vec3(1.0f, 10.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), 0.0f, vec3(j * 40.0f - 20.0f, 5.0f, i * -40.0f)));
         }
     }
 }
 
 void Scene::createStatues(){
+    statueBase = Model("cuboid.obj");
+    bunny = Model("bunny.obj", BUNNY);
+    armadillo = Model("armadillo.obj", ARMADILLO);
+    dragon = Model("dragon.obj", DRAGON);
+    david = Model("david.obj", DAVID);
+    mat4 transform;
     for(int i = 0; i < 7; i++){
         if(i==0 || i==6){
             double zCoord = (i==0) ? 0.0f : -200.0f;
             for(int j=0;j<3;j++){
-                Model statueBase = Model("cuboid.obj");
-                statueBase.updateTransform(vec3(3.0f, 10.0f, 3.0f), vec3(0.0f, 1.0f, 0.0f), 45.0f, vec3(j * 40.0f, 5.0f, zCoord));
-                statueBases.push_back(statueBase);
+                statueBase.addTransform(getTransform(vec3(3.0f, 10.0f, 3.0f), vec3(0.0f, 1.0f, 0.0f), 45.0f, vec3(j * 40.0f, 5.0f, zCoord)));
                 createStatueHead(i, j);
             }
         }else if(i==1 || i==3 || i==5){
             double zCoord = ((i==1) ? (-20.0f) : ((i==3) ? (-100.0f) : (-180.0f)));
             for(int j=0;j<2;j++){
-                Model statueBase = Model("cuboid.obj");
-                statueBase.updateTransform(vec3(3.0f, 10.0f, 3.0f), vec3(0.0f, 1.0f, 0.0f), 45.0f, vec3(j * 120.0f - 20.0f, 5.0f, zCoord));
-                statueBases.push_back(statueBase);
+                statueBase.addTransform(getTransform(vec3(3.0f, 10.0f, 3.0f), vec3(0.0f, 1.0f, 0.0f), 45.0f, vec3(j * 120.0f - 20.0f, 5.0f, zCoord)));
                 createStatueHead(i, j);
             }
         }else{
             double zCoord = (i==2) ? -60.0f : -140.0f;
             for(int j=0;j<4;j++){
-                Model statueBase = Model("cuboid.obj");
-                statueBase.updateTransform(vec3(3.0f, 10.0f, 3.0f), vec3(0.0f, 1.0f, 0.0f), 45.0f, vec3(j * 40.0f - 20.0f, 5.0f, zCoord));
-                statueBases.push_back(statueBase);
+                statueBase.addTransform(getTransform(vec3(3.0f, 10.0f, 3.0f), vec3(0.0f, 1.0f, 0.0f), 45.0f, vec3(j * 40.0f - 20.0f, 5.0f, zCoord)));
                 createStatueHead(i, j);
             }
         }
@@ -181,13 +184,12 @@ void Scene::createStatueHead(int i, int j){
     }
     switch(randInt){
         case 0: {
-            statueHead = Model("bunny.obj", BUNNY);
             scaling = vec3(3.0f, 3.0f, 3.0f);
             translation += vec3(0.0f, 1.0f, 0.0f);
+            bunny.addTransform(getTransform(scaling, rotateAxis, rotateAngle, translation));
             break;
         } case 1: {
-            statueHead = Model("armadillo.obj", ARMADILLO);
-            statueHead.updateTransform(translate(mat4(1.0f), vec3(0.2f, 0.0f, -0.3f)));
+            mat4 preTransform = translate(mat4(1.0f), vec3(0.2f, 0.0f, -0.3f));
             scaling = vec3(4.0f, 4.0f, 4.0f);
             if(i == 0 || i == 6){
                 rotateAngle = (i==0) ? 0.0f : 180.0f;
@@ -195,18 +197,17 @@ void Scene::createStatueHead(int i, int j){
                 rotateAngle *= (-1.0f);
             }
             translation += vec3(0.0f, 4.2f, 0.0f);
+            armadillo.addTransform(getTransform(scaling, rotateAxis, rotateAngle, translation) * preTransform);
             break;
         } case 2: {
-            statueHead = Model("dragon.obj", DRAGON);
             scaling = vec3(0.75f, 0.75f, 0.75f);
+            dragon.addTransform(getTransform(scaling, rotateAxis, rotateAngle, translation));
             break;
         } case 3: {
-            statueHead = Model("david.obj", DAVID);
-            statueHead.updateTransform(translate(mat4(1.0f), vec3(-1.5f, 0.0f, -15.0f)));
+            mat4 preTransform = translate(mat4(1.0f), vec3(-1.5f, 0.0f, -15.0f));
             scaling = vec3(2.0f, 2.0f, 2.0f);
             translation += vec3(0.0f, -1.0f, 0.0f);
+            david.addTransform(getTransform(scaling, rotateAxis, rotateAngle, translation) * preTransform);
         }
     }
-    statueHead.updateTransform(scaling, rotateAxis, rotateAngle, translation);
-    statueHeads.push_back(statueHead);
 }

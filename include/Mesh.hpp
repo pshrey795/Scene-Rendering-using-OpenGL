@@ -15,10 +15,13 @@ class Mesh {
         Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures);
         void draw(Shader &shader, ModelType modelType, ShaderType shaderType);
 
+        void addTransform(mat4 transform);
+
     private:
         //Rendering Data
         unsigned int VAO, VBO, EBO;
         void setupMesh();
+        vector<mat4> modelTransforms;
 };
 
 #endif

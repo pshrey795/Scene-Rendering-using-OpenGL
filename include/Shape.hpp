@@ -64,5 +64,6 @@ enum ShaderType{
 };
 
 void buildSquare(vector<Vertex> &vertices, vector<unsigned int> &indices);
+mat4 getTransform(vec3 scale, vec3 rotateAxis, float rotateAngle, vec3 translate);
 
 #endif

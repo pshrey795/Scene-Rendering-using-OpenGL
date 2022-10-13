@@ -14,9 +14,9 @@ class Model{
         void draw(Shader &shader, ShaderType shaderType);
 
         //Model Transformations
-        mat4 localTransform;
-        void updateTransform(mat4 transform); 
-        void updateTransform(vec3 scale, vec3 rotateAxis, float rotateAngle, vec3 translate);
+        void updateTransform(mat4 transform);
+        void addTransform(mat4 transform); 
+
     
     private:
         vector<Mesh> meshes;
