@@ -51,6 +51,10 @@ enum ModelType {
     ROAD, 
     LAKE, 
     CUBEFACE,
+    BUNNY,
+    ARMADILLO,
+    DRAGON,
+    DAVID,
 };
 
 enum ShaderType{

@@ -41,10 +41,26 @@ void Mesh::setupMesh(){
     glBindVertexArray(0);
 }
 
-void Mesh::draw(Shader &shader, ShaderType shaderType){
+void Mesh::draw(Shader &shader, ModelType modelType, ShaderType shaderType){
     switch(shaderType){
         case BASIC: {
-            shader.setVec3("color", vec3(1.0f, 1.0f, 1.0f));
+            switch(modelType){
+                case BUNNY: {
+                    shader.setVec3("color", vec3(1.0f, 0.0f, 0.0f));
+                    break;
+                } case ARMADILLO: {
+                    shader.setVec3("color", vec3(0.0f, 1.0f, 0.0f));
+                    break;
+                } case DRAGON: {
+                    shader.setVec3("color", vec3(0.0f, 0.0f, 1.0f));
+                    break; 
+                } case DAVID: {
+                    shader.setVec3("color", vec3(1.0f, 1.0f, 0.0f));
+                    break;
+                } default: {
+                    shader.setVec3("color", vec3(1.0f, 1.0f, 1.0f));
+                }
+            }
             break;
         }case TEXTURE: {
             glActiveTexture(GL_TEXTURE0 + textures[0].texUnit);

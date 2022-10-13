@@ -11,7 +11,8 @@ Scene::Scene(int argc, char** argv){
     createStatues();
 
     //For testing purposes
-    // testModel = Model("bunny.obj");
+    // testModel = Model("david.obj");
+    // testModel.updateTransform(translate(mat4(1.0f), vec3(0.0f, 10.0f, 0.0f)));
 
     shaders[BASIC] = new Shader("Basic.vs", "Basic.fs");
     shaders[TEXTURE] = new Shader("Textured.vs", "Textured.fs");
@@ -136,7 +137,7 @@ void Scene::createStatues(){
                 Model statueBase = Model("cuboid.obj");
                 statueBase.updateTransform(vec3(3.0f, 10.0f, 3.0f), vec3(0.0f, 1.0f, 0.0f), 45.0f, vec3(j * 40.0f, 5.0f, zCoord));
                 statueBases.push_back(statueBase);
-                createStatueHead(0.0f, vec3(j * 40.0f, 15.0f, zCoord));
+                createStatueHead(i, j);
             }
         }else if(i==1 || i==3 || i==5){
             double zCoord = ((i==1) ? (-20.0f) : ((i==3) ? (-100.0f) : (-180.0f)));
@@ -144,7 +145,7 @@ void Scene::createStatues(){
                 Model statueBase = Model("cuboid.obj");
                 statueBase.updateTransform(vec3(3.0f, 10.0f, 3.0f), vec3(0.0f, 1.0f, 0.0f), 45.0f, vec3(j * 120.0f - 20.0f, 5.0f, zCoord));
                 statueBases.push_back(statueBase);
-                createStatueHead(0.0f, vec3(j * 120.0f - 20.0f, 15.0f, zCoord));
+                createStatueHead(i, j);
             }
         }else{
             double zCoord = (i==2) ? -60.0f : -140.0f;
@@ -152,31 +153,60 @@ void Scene::createStatues(){
                 Model statueBase = Model("cuboid.obj");
                 statueBase.updateTransform(vec3(3.0f, 10.0f, 3.0f), vec3(0.0f, 1.0f, 0.0f), 45.0f, vec3(j * 40.0f - 20.0f, 5.0f, zCoord));
                 statueBases.push_back(statueBase);
-                createStatueHead(0.0f, vec3(j * 40.0f - 20.0f, 15.0f, zCoord));
+                createStatueHead(i, j);
             }
         }
     }
 }
 
-void Scene::createStatueHead(float rotateAngle, vec3 translate){
+void Scene::createStatueHead(int i, int j){
     Model statueHead; 
     vec3 scaling; 
-    int randInt = rand() % 3;
+    vec3 translation; 
+    vec3 rotateAxis = vec3(0.0f, 1.0f, 0.0f);
+    float rotateAngle; 
+    int randInt = (i + j) % 4;
+    if(i == 0 || i == 6){
+        double zCoord = (i==0) ? 0.0f : -200.0f;
+        translation = vec3(j * 40.0f, 15.0f, zCoord);
+        rotateAngle = (i==0) ? 180.0f : 0.0f;
+    }else if(i==1 || i==3 || i==5){
+        double zCoord = ((i==1) ? (-20.0f) : ((i==3) ? (-100.0f) : (-180.0f)));
+        translation = vec3(j * 120.0f - 20.0f, 15.0f, zCoord);
+        rotateAngle = (j==0) ? 90.0f : -90.0f;
+    }else{
+        double zCoord = (i==2) ? -60.0f : -140.0f;
+        translation = vec3(j * 40.0f - 20.0f, 15.0f, zCoord);
+        rotateAngle = (j%2==0) ? 90.0f : -90.0f;
+    }
     switch(randInt){
         case 0: {
-            statueHead = Model("bunny.obj");
+            statueHead = Model("bunny.obj", BUNNY);
             scaling = vec3(3.0f, 3.0f, 3.0f);
+            translation += vec3(0.0f, 1.0f, 0.0f);
             break;
         } case 1: {
-            statueHead = Model("armadillo.obj");
-            scaling = vec3(5.0f, 5.0f, 5.0f);
+            statueHead = Model("armadillo.obj", ARMADILLO);
+            statueHead.updateTransform(translate(mat4(1.0f), vec3(0.2f, 0.0f, -0.3f)));
+            scaling = vec3(4.0f, 4.0f, 4.0f);
+            if(i == 0 || i == 6){
+                rotateAngle = (i==0) ? 0.0f : 180.0f;
+            }else{
+                rotateAngle *= (-1.0f);
+            }
+            translation += vec3(0.0f, 4.2f, 0.0f);
             break;
         } case 2: {
-            statueHead = Model("dragon.obj");
-            scaling = vec3(1.0f, 1.0f, 1.0f);
+            statueHead = Model("dragon.obj", DRAGON);
+            scaling = vec3(0.75f, 0.75f, 0.75f);
             break;
+        } case 3: {
+            statueHead = Model("david.obj", DAVID);
+            statueHead.updateTransform(translate(mat4(1.0f), vec3(-1.5f, 0.0f, -15.0f)));
+            scaling = vec3(2.0f, 2.0f, 2.0f);
+            translation += vec3(0.0f, -1.0f, 0.0f);
         }
     }
-    statueHead.updateTransform(scaling, vec3(0.0f, 1.0f, 0.0f), rotateAngle, translate);
+    statueHead.updateTransform(scaling, rotateAxis, rotateAngle, translation);
     statueHeads.push_back(statueHead);
 }

@@ -12,8 +12,7 @@ Model::Model(ModelType modelType, unordered_map<ModelType, pair<int,unsigned int
     vector<unsigned int> indices;
     vector<Texture> textures; 
     this->localTransform = mat4(1.0f);
-    this->baseLocation = vec3(0.0f, 0.0f, 0.0f);
-    this->baseSize = vec3(1.0f, 1.0f, 1.0f);
+    this->modelType = modelType;
 
     //Terrain
     switch(modelType){
@@ -74,7 +73,7 @@ Model::Model(ModelType modelType, unordered_map<ModelType, pair<int,unsigned int
 Model::Model(string obj_path, ModelType modelType){
     loadModel(objDir + obj_path);
     this->localTransform = mat4(1.0f);
-    this->baseLocation = vec3(0.0f, 0.0f, 0.0f);
+    this->modelType = modelType;
     
     //Base Size depends on the Model
 }
@@ -140,7 +139,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
 
 void Model::draw(Shader &shader, ShaderType shaderType) {
     for (unsigned int i = 0; i < meshes.size(); i++) {
-        meshes[i].draw(shader,shaderType);
+        meshes[i].draw(shader, modelType, shaderType);
     }
 }
 
@@ -154,9 +153,7 @@ void Model::updateTransform(vec3 scaling, vec3 rotateAxis, float rotateAngle, ve
     transform = rotate(transform, (radians(rotateAngle)), rotateAxis);
     transform = scale(transform, scaling);
     //Order of application: scale -> rotate -> translate
-    this->localTransform = transform;
-    this->baseLocation = translation;
-    this->baseSize = vec3(baseSize.x * scaling.x, baseSize.y * scaling.y, baseSize.z * scaling.z);
+    this->localTransform = transform * this->localTransform;
 }
 
 unsigned int Model::getTextureFromFile(string fileName, int texUnit){

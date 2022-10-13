@@ -34,7 +34,7 @@ class Scene {
         void createTerrain();
         void createLampPosts();
         void createStatues();
-        void createStatueHead(float rotateAngle, vec3 translate); 
+        void createStatueHead(int i, int j); 
          
     public:
         Scene();
