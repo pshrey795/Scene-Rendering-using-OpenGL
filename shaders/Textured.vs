@@ -5,13 +5,16 @@ layout (location = 2) in vec2 vTex;
 
 uniform mat4 model;
 uniform mat4 view;
+uniform mat3 normalViewMatrix;
 uniform mat4 projection;
 
-out vec3 vNormFrag;
-out vec2 vTexFrag;
+out vec3 FragPos;
+out vec3 FragNorm;
+out vec2 FragTex;
 
 void main(){
     gl_Position = projection * view * model * vec4(vPos, 1.0);
-    vNormFrag = vNorm;
-    vTexFrag = vTex;
+    FragPos = vec3(model * vec4(vPos, 1.0));
+    FragNorm = normalize(normalViewMatrix * vNorm);
+    FragTex = vTex;
 }

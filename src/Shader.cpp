@@ -34,7 +34,7 @@ Shader::Shader(string vertexPath, string fragmentPath){
     glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
     if(!success){
         glGetShaderInfoLog(vertex, 512, NULL, infoLog);
-        cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << endl;
+        cout << vertexPath << ": ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << endl;
     }
 
     //Fragment Shader
@@ -44,7 +44,7 @@ Shader::Shader(string vertexPath, string fragmentPath){
     glGetShaderiv(fragment,GL_COMPILE_STATUS,&success);
     if(!success){
         glGetShaderInfoLog(fragment,512,NULL,infoLog);
-        cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << endl;
+        cout << fragmentPath << ": ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << endl;
     }
 
     //Shader Program
@@ -68,8 +68,16 @@ void Shader::use(){
     glUseProgram(shaderID);
 }
 
+void Shader::setMat3(const string &name, mat3 value){
+    glUniformMatrix3fv(glGetUniformLocation(shaderID, name.c_str()), 1, GL_FALSE, value_ptr(value));
+}
+
 void Shader::setMat4(const string &name, mat4 value){
     glUniformMatrix4fv(glGetUniformLocation(shaderID, name.c_str()), 1, GL_FALSE, value_ptr(value));
+}
+
+void Shader::setFloat(const string &name, float value){
+    glUniform1f(glGetUniformLocation(shaderID, name.c_str()), value);
 }
 
 void Shader::setInt(const string &name, int value){

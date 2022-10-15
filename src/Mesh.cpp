@@ -3,6 +3,7 @@
 Mesh::Mesh(vector<Vertex> vertices, vector<unsigned int> indices){
     this->vertices = vertices;
     this->indices = indices;
+    this->material = Material();
     setupMesh();
 }
 
@@ -17,6 +18,7 @@ Mesh::Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture
     this->vertices = vertices;
     this->indices = indices;
     this->textures = textures;
+    this->material = Material();
     setupMesh();
 }
 
@@ -57,21 +59,25 @@ void Mesh::draw(Shader &shader, ModelType modelType, ShaderType shaderType){
         case BASIC: {
             switch(modelType){
                 case BUNNY: {
-                    shader.setVec3("color", vec3(1.0f, 0.0f, 0.0f));
+                    material.diffuse = vec3(1.0f, 0.0f, 0.0f);
                     break;
                 } case ARMADILLO: {
-                    shader.setVec3("color", vec3(0.0f, 1.0f, 0.0f));
+                    material.diffuse = vec3(0.0f, 1.0f, 0.0f);
                     break;
                 } case DRAGON: {
-                    shader.setVec3("color", vec3(0.0f, 0.0f, 1.0f));
+                    material.diffuse = vec3(0.0f, 0.0f, 1.0f);
                     break; 
                 } case DAVID: {
-                    shader.setVec3("color", vec3(1.0f, 1.0f, 0.0f));
+                    material.diffuse = vec3(1.0f, 1.0f, 0.0f);
                     break;
                 } default: {
-                    shader.setVec3("color", vec3(1.0f, 1.0f, 1.0f));
+                    material.diffuse = vec3(0.0f, 0.0f, 0.0f);
                 }
             }
+            shader.setVec3("diffuse", material.diffuse);
+            shader.setVec3("ambient", material.ambient);
+            shader.setVec3("specular", material.specular);
+            shader.setFloat("specularity", material.specularity);
             break;
         }case TEXTURE: {
             glActiveTexture(GL_TEXTURE0 + textures[0].texUnit);
@@ -97,6 +103,9 @@ void Mesh::draw(Shader &shader, ModelType modelType, ShaderType shaderType){
 
     glBindVertexArray(VAO);
     for(auto m : modelTransforms){
+        if(shaderType == BASIC || shaderType == TEXTURE){
+            shader.setMat3("normalViewMatrix", mat3(transpose(inverse(m))));
+        }
         shader.setMat4("model", m);
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
     }

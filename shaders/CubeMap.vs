@@ -6,7 +6,6 @@ out vec3 texDir;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-
 uniform bool isTree;
 
 void main(){

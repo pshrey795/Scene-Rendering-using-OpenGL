@@ -7,6 +7,12 @@ Scene::Scene(int argc, char** argv){
     currentTime = 0.0f;
     frameCounter = 0;
 
+    //Loading Shaders
+    shaders[BASIC] = new Shader("Basic.vs", "Basic.fs");
+    shaders[TEXTURE] = new Shader("Textured.vs", "Textured.fs");
+    shaders[CUBEMAP] = new Shader("CubeMap.vs", "CubeMap.fs");
+    shaders[LIGHT] = new Shader("Light.vs", "Light.fs");
+
     //User defined initializations
     createTerrain();
     createLampPosts();
@@ -16,10 +22,6 @@ Scene::Scene(int argc, char** argv){
     //For testing purposes
     // testModel = Model("david.obj");
     // testModel.updateTransform(translate(mat4(1.0f), vec3(0.0f, 10.0f, 0.0f)));
-
-    shaders[BASIC] = new Shader("Basic.vs", "Basic.fs");
-    shaders[TEXTURE] = new Shader("Textured.vs", "Textured.fs");
-    shaders[CUBEMAP] = new Shader("CubeMap.vs", "CubeMap.fs");
 }
 
 void Scene::init(){
@@ -47,6 +49,7 @@ void Scene::run(){
         frameCounter = (frameCounter + 1) % 60;
 
         //Drawing Space
+        sunDirection = getSunDir();
         this->draw();
 
         gui->swapBuffers();
@@ -56,63 +59,84 @@ void Scene::run(){
 }
 
 void Scene::draw(){
+    Shader*& textureShader = shaders[TEXTURE];
+    Shader*& basicShader = shaders[BASIC];
+    Shader*& cubeMapShader = shaders[CUBEMAP];
+    Shader*& lightShader = shaders[LIGHT];
+
+    mat4 viewMatrix = gui->camera->getViewMatrix();
+    mat4 perspectiveMatrix = gui->camera->getPerspectiveMatrix();
+
+    bool isDay = (sunDirection.y < 0.0f);
+    for(auto s : shaders){
+        s.second->setBool("isDay", isDay);
+    }
+
     //Terrain
-    Shader*& currentShader = shaders[TEXTURE];
-    currentShader->use();
-    currentShader->setMat4("view", gui->camera->getViewMatrix());
-    currentShader->setMat4("projection", gui->camera->getPerspectiveMatrix()); 
+    textureShader->use();
+    textureShader->setVec3("sunDir", sunDirection);
+    textureShader->setMat4("view", viewMatrix);
+    textureShader->setMat4("projection", perspectiveMatrix); 
 
     //Grass
-    grass.draw(*currentShader, TEXTURE);
+    grass.draw(*textureShader, TEXTURE);
 
     //Lake
-    lake.draw(*currentShader, TEXTURE);
+    lake.draw(*textureShader, TEXTURE);
 
     //Roads
-    road.draw(*currentShader, TEXTURE);
+    road.draw(*textureShader, TEXTURE);
 
     //Lamp Posts
-    Shader*& currentShader2 = shaders[BASIC];
-    currentShader2->use();
-    currentShader2->setMat4("view", gui->camera->getViewMatrix());
-    currentShader2->setMat4("projection", gui->camera->getPerspectiveMatrix());
-    lampPost.draw(*currentShader2, BASIC);
+    basicShader->use();
+    basicShader->setVec3("viewPos", gui->camera->Position);
+    basicShader->setVec3("sunDir", sunDirection);
+    basicShader->setMat4("view", viewMatrix);
+    basicShader->setMat4("projection", perspectiveMatrix);
+    lampPost.draw(*basicShader, BASIC);
+
+    //Lamp Lights
+    lightShader->use();
+    lightShader->setMat4("view", viewMatrix);
+    lightShader->setMat4("projection", perspectiveMatrix);
+    lamp.draw(*lightShader, LIGHT);
 
     //Statues
     //Statue Bases
-    statueBase.draw(*currentShader2, BASIC);
+    basicShader->use();
+    statueBase.draw(*basicShader, BASIC);
 
     //Statue Heads
     //Bunny
-    bunny.draw(*currentShader2, BASIC);
+    bunny.draw(*basicShader, BASIC);
 
     //Armadillo
-    armadillo.draw(*currentShader2, BASIC);
+    armadillo.draw(*basicShader, BASIC);
 
     //Dragon
-    dragon.draw(*currentShader2, BASIC);
+    dragon.draw(*basicShader, BASIC);
 
     //David
-    david.draw(*currentShader2, BASIC);
+    david.draw(*basicShader, BASIC);
 
-    //Skybox
+    //Skybox and Billboarded Trees
     glDepthFunc(GL_LEQUAL);
-    Shader*& currentShader3 = shaders[CUBEMAP];
-    currentShader3->use();
+    cubeMapShader->use();
     //Any translation from the camera should not affect the skybox
-    currentShader3->setMat4("projection", gui->camera->getPerspectiveMatrix());
+    cubeMapShader->setMat4("projection", gui->camera->getPerspectiveMatrix());
     mat4 newViewMatrix = mat4(mat3(gui->camera->getViewMatrix()));
-    currentShader3->setMat4("view", newViewMatrix);
-    tree1.draw(*currentShader3, CUBEMAP);
-    tree2.draw(*currentShader3, CUBEMAP);
-    skyBox.draw(*currentShader3, CUBEMAP);
+    cubeMapShader->setMat4("view", newViewMatrix);
+    tree1.draw(*cubeMapShader, CUBEMAP);
+    tree2.draw(*cubeMapShader, CUBEMAP);
+    skyBox.draw(*cubeMapShader, CUBEMAP);
     glDepthFunc(GL_LESS);
 
     //For testing only
     // Shader*& testShader = shaders[BASIC];
     // testShader->use();
-    // testShader->setMat4("view", gui->camera->getViewMatrix());
-    // testShader->setMat4("projection", gui->camera->getPerspectiveMatrix());
+    // testShader->setMat4("view", viewMatrix);
+    // testShader->setMat4("normalViewMatrix", normalViewMatrix);
+    // testShader->setMat4("projection", perspectiveMatrix);
     // testShader->setMat4("model", testModel.localTransform);
     // testModel.draw(*testShader, BASIC);
 }
@@ -139,11 +163,21 @@ void Scene::createTerrain(){
 void Scene::createLampPosts(){
     //24 Cylinders in a 6 * 4 grid
     lampPost = Model("cylinder.obj", texUnit); 
+    lamp = Model("sphere.obj", texUnit);
     for(int i = 0; i < 6;i++){
         for(int j = 0; j < 4;j++){
+            vec3 newLightPos = vec3(j * 40.0f - 20.0f, 16.5f, i * -40.0f);
             lampPost.addTransform(getTransform(vec3(1.0f, 10.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), 0.0f, vec3(j * 40.0f - 20.0f, 5.0f, i * -40.0f)));
+            lamp.addTransform(getTransform(vec3(1.5f, 1.5f, 1.5f), vec3(1.0f, 0.0f, 0.0f), 0.0f, vec3(j * 40.0f - 20.0f, 16.5f, i * -40.0f)));
+            string lightName = "lampPos[" + to_string(lampPos.size()) + "]";
+            lampPos.push_back(newLightPos);
+            shaders[BASIC]->setVec3(lightName, newLightPos);
+            shaders[TEXTURE]->setVec3(lightName, newLightPos);
         }
     }
+    int n = lampPos.size();
+    shaders[BASIC]->setInt("numLamps", n);
+    shaders[TEXTURE]->setInt("numLamps", n);
 }
 
 void Scene::createStatues(){
@@ -236,7 +270,7 @@ void Scene::createSkyBox(){
     for(unsigned int i = 0; i < 12; i++){
         float theta = (float)i * 30.0f; 
         int k = rand();
-        double k_double = (double)k / (double)(RAND_MAX + 1);
+        double k_double = (double)k / (double)(RAND_MAX);
         if(k%2==0){
             //Tree 1
             mat4 transform = mat4(1.0f);

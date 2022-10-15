@@ -153,22 +153,26 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
         }
     }
 
-    Material mat;
-    aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-    aiColor3D color(0.0f, 0.0f, 0.0f);
-    material->Get(AI_MATKEY_COLOR_DIFFUSE, color);
-    mat.diffuse = vec3(color.r, color.g, color.b);
-    material->Get(AI_MATKEY_COLOR_SPECULAR, color);
-    mat.specular = vec3(color.r, color.g, color.b);
-    material->Get(AI_MATKEY_COLOR_AMBIENT, color);
-    mat.ambient = vec3(color.r, color.g, color.b);
-    material->Get(AI_MATKEY_COLOR_EMISSIVE, color);
-    mat.emission = vec3(color.r, color.g, color.b);
-    float specularity;
-    material->Get(AI_MATKEY_SHININESS, specularity);
-    mat.specularity = specularity;
+    if(modelType == TREE){
+        Material mat;
+        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+        aiColor3D color(0.0f, 0.0f, 0.0f);
+        material->Get(AI_MATKEY_COLOR_DIFFUSE, color);
+        mat.diffuse = vec3(color.r, color.g, color.b);
+        material->Get(AI_MATKEY_COLOR_SPECULAR, color);
+        mat.specular = vec3(color.r, color.g, color.b);
+        material->Get(AI_MATKEY_COLOR_AMBIENT, color);
+        mat.ambient = vec3(color.r, color.g, color.b);
+        material->Get(AI_MATKEY_COLOR_EMISSIVE, color);
+        mat.emission = vec3(color.r, color.g, color.b);
+        float specularity;
+        material->Get(AI_MATKEY_SHININESS, specularity);
+        mat.specularity = specularity;
 
-    return Mesh(vertices, indices, mat);
+        return Mesh(vertices, indices, mat);
+    }else {
+        return Mesh(vertices, indices);
+    }
 }
 
 void Model::draw(Shader &shader, ShaderType shaderType) {

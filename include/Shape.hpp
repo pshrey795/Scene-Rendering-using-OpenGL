@@ -32,7 +32,6 @@ struct Vertex {
 enum TextureType {
     DIFFUSE,
     SPECULAR, 
-    LIGHT,
     NORMAL, 
     ENV,
     DISP,
@@ -53,11 +52,11 @@ struct Material {
     vec3 emission;
     float specularity;
     Material(){
-        ambient = vec3(0.0f, 0.0f, 0.0f);
+        ambient = vec3(0.1f, 0.1f, 0.1f);
         diffuse = vec3(0.0f, 0.0f, 0.0f);
-        specular = vec3(0.0f, 0.0f, 0.0f);
+        specular = vec3(0.8f, 0.8f, 0.8f);
         emission = vec3(0.0f, 0.0f, 0.0f);
-        specularity = 0.0f;
+        specularity = 10.0f;
     }
 };
 
@@ -77,7 +76,8 @@ enum ModelType {
 enum ShaderType{
     BASIC,
     TEXTURE,
-    CUBEMAP
+    CUBEMAP,
+    LIGHT
 };
 
 void buildSquare(vector<Vertex> &vertices, vector<unsigned int> &indices);

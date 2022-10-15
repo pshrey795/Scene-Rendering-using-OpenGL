@@ -18,10 +18,10 @@ class Scene {
         //Lamp Post(Cylinder) * 24
         Model lampPost;
         //Light Sources(Sun + 25 * Over each lamp post)
-        Model sun;
-        vec3 sunPos; 
+        vec3 sunDirection; 
         Model lamp;
         vector<vec3> lampPos;
+        vector<bool> lampState;
 
         //Statues
         //Cuboidal Boxes * 20
