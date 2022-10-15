@@ -13,6 +13,7 @@ class Shader {
         void setMat4(const string &name, mat4 value);
         void setInt(const string &name, int value);
         void setVec3(const string &name, vec3 value);
+        void setBool(const string &name, bool value);
 
     private:
         unsigned int shaderID;

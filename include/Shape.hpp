@@ -36,7 +36,8 @@ enum TextureType {
     NORMAL, 
     ENV,
     DISP,
-    SHADOW
+    SHADOW,
+    CUBE_MAP
 };
 
 struct Texture {
@@ -45,16 +46,32 @@ struct Texture {
     int texUnit; 
 };
 
+struct Material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    vec3 emission;
+    float specularity;
+    Material(){
+        ambient = vec3(0.0f, 0.0f, 0.0f);
+        diffuse = vec3(0.0f, 0.0f, 0.0f);
+        specular = vec3(0.0f, 0.0f, 0.0f);
+        emission = vec3(0.0f, 0.0f, 0.0f);
+        specularity = 0.0f;
+    }
+};
+
 enum ModelType {
     NONE,
     GRASS, 
     ROAD, 
     LAKE, 
-    CUBEFACE,
+    SKYBOX,
     BUNNY,
     ARMADILLO,
     DRAGON,
     DAVID,
+    TREE
 };
 
 enum ShaderType{

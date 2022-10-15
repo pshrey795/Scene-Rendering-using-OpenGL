@@ -11,6 +11,7 @@ Scene::Scene(int argc, char** argv){
     createTerrain();
     createLampPosts();
     createStatues();
+    createSkyBox();
 
     //For testing purposes
     // testModel = Model("david.obj");
@@ -18,7 +19,7 @@ Scene::Scene(int argc, char** argv){
 
     shaders[BASIC] = new Shader("Basic.vs", "Basic.fs");
     shaders[TEXTURE] = new Shader("Textured.vs", "Textured.fs");
-    // shaders[CubeMap] = new Shader("CubeMap.vs", "CubeMap.fs");
+    shaders[CUBEMAP] = new Shader("CubeMap.vs", "CubeMap.fs");
 }
 
 void Scene::init(){
@@ -94,6 +95,19 @@ void Scene::draw(){
     //David
     david.draw(*currentShader2, BASIC);
 
+    //Skybox
+    glDepthFunc(GL_LEQUAL);
+    Shader*& currentShader3 = shaders[CUBEMAP];
+    currentShader3->use();
+    //Any translation from the camera should not affect the skybox
+    currentShader3->setMat4("projection", gui->camera->getPerspectiveMatrix());
+    mat4 newViewMatrix = mat4(mat3(gui->camera->getViewMatrix()));
+    currentShader3->setMat4("view", newViewMatrix);
+    tree1.draw(*currentShader3, CUBEMAP);
+    tree2.draw(*currentShader3, CUBEMAP);
+    skyBox.draw(*currentShader3, CUBEMAP);
+    glDepthFunc(GL_LESS);
+
     //For testing only
     // Shader*& testShader = shaders[BASIC];
     // testShader->use();
@@ -124,7 +138,7 @@ void Scene::createTerrain(){
 
 void Scene::createLampPosts(){
     //24 Cylinders in a 6 * 4 grid
-    lampPost = Model("cylinder.obj"); 
+    lampPost = Model("cylinder.obj", texUnit); 
     for(int i = 0; i < 6;i++){
         for(int j = 0; j < 4;j++){
             lampPost.addTransform(getTransform(vec3(1.0f, 10.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), 0.0f, vec3(j * 40.0f - 20.0f, 5.0f, i * -40.0f)));
@@ -133,11 +147,11 @@ void Scene::createLampPosts(){
 }
 
 void Scene::createStatues(){
-    statueBase = Model("cuboid.obj");
-    bunny = Model("bunny.obj", BUNNY);
-    armadillo = Model("armadillo.obj", ARMADILLO);
-    dragon = Model("dragon.obj", DRAGON);
-    david = Model("david.obj", DAVID);
+    statueBase = Model("cuboid.obj", texUnit);
+    bunny = Model("bunny.obj", texUnit, BUNNY);
+    armadillo = Model("armadillo.obj", texUnit, ARMADILLO);
+    dragon = Model("dragon.obj", texUnit, DRAGON);
+    david = Model("david.obj", texUnit, DAVID);
     mat4 transform;
     for(int i = 0; i < 7; i++){
         if(i==0 || i==6){
@@ -208,6 +222,37 @@ void Scene::createStatueHead(int i, int j){
             scaling = vec3(2.0f, 2.0f, 2.0f);
             translation += vec3(0.0f, -1.0f, 0.0f);
             david.addTransform(getTransform(scaling, rotateAxis, rotateAngle, translation) * preTransform);
+        }
+    }
+}
+
+void Scene::createSkyBox(){
+    skyBox = Model("cuboid.obj", texUnit, SKYBOX);
+    skyBox.addTransform(getTransform(vec3(1.0f, 1.0f, 1.0f), vec3(0.0f, 1.0f, 0.0f), 0.0f, vec3(0.0f, 0.0f, 0.0f)));
+
+    tree1 = Model("Trees/tree1.obj", texUnit, TREE);
+    tree2 = Model("Trees/tree2.obj", texUnit, TREE);
+
+    for(unsigned int i = 0; i < 12; i++){
+        float theta = (float)i * 30.0f; 
+        int k = rand();
+        double k_double = (double)k / (double)(RAND_MAX + 1);
+        if(k%2==0){
+            //Tree 1
+            mat4 transform = mat4(1.0f);
+            transform = rotate(transform, radians(theta), vec3(0.0f, 1.0f, 0.0f));
+            transform = translate(transform, vec3(0.0f, -20.0f + i * k_double * 5.0f, -500.0f));
+            transform = rotate(transform, radians(-90.0f), vec3(0.0f, 1.0f, 0.0f));
+            transform = scale(transform, vec3(1.0f, 2.0f, 2.0f));
+            tree1.addTransform(transform);
+        }else{
+            //Tree 2
+            mat4 transform = mat4(1.0f);
+            transform = rotate(transform, radians(theta), vec3(0.0f, 1.0f, 0.0f));
+            transform = translate(transform, vec3(0.0f, -20.0f + i * k_double * 5.0f, -500.0f));
+            transform = scale(transform, vec3(4.0f, 4.0f, 1.0f));
+            transform = rotate(transform, radians(90.0f), vec3(1.0f, 0.0f, 0.0f));
+            tree2.addTransform(transform);
         }
     }
 }

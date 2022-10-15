@@ -79,3 +79,7 @@ void Shader::setInt(const string &name, int value){
 void Shader::setVec3(const string &name, vec3 value){
     glUniform3fv(glGetUniformLocation(shaderID, name.c_str()), 1, value_ptr(value));
 }
+
+void Shader::setBool(const string &name, bool value){
+    glUniform1i(glGetUniformLocation(shaderID, name.c_str()), (int)value);
+}

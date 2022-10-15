@@ -10,13 +10,12 @@ class Model{
     public:
         Model();
         Model(ModelType modelType, unordered_map<ModelType, pair<int,unsigned int>> &texUnit);
-        Model(string obj_path, ModelType modelType = NONE);
+        Model(string obj_path, unordered_map<ModelType, pair<int,unsigned int>> &texUnit, ModelType modelType = NONE);
         void draw(Shader &shader, ShaderType shaderType);
 
         //Model Transformations
         void updateTransform(mat4 transform);
         void addTransform(mat4 transform); 
-
     
     private:
         vector<Mesh> meshes;
@@ -27,6 +26,7 @@ class Model{
 
         //Extracting a new texture from an image file 
         unsigned int getTextureFromFile(string fileName, int texUnit);
+        unsigned int getCubeMap(string fileDir, int texUnit);
 };
 
 #endif

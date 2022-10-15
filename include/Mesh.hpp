@@ -12,6 +12,7 @@ class Mesh {
 
         //We don't take textures from the constructor, we set them later using explicit setters 
         Mesh(vector<Vertex> vertices, vector<unsigned int> indices);
+        Mesh(vector<Vertex> vertices, vector<unsigned int> indices, Material mat);  
         Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures);
         void draw(Shader &shader, ModelType modelType, ShaderType shaderType);
 
@@ -20,6 +21,7 @@ class Mesh {
     private:
         //Rendering Data
         unsigned int VAO, VBO, EBO;
+        Material material;
         void setupMesh();
         vector<mat4> modelTransforms;
 };

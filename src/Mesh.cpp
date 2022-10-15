@@ -6,6 +6,13 @@ Mesh::Mesh(vector<Vertex> vertices, vector<unsigned int> indices){
     setupMesh();
 }
 
+Mesh::Mesh(vector<Vertex> vertices, vector<unsigned int> indices, Material mat){
+    this->vertices = vertices;
+    this->indices = indices;
+    this->material = mat;
+    setupMesh();
+}
+
 Mesh::Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures){
     this->vertices = vertices;
     this->indices = indices;
@@ -71,6 +78,20 @@ void Mesh::draw(Shader &shader, ModelType modelType, ShaderType shaderType){
             glBindTexture(GL_TEXTURE_2D, textures[0].id);
             shader.setInt("tex0", textures[0].texUnit);
             break;
+        }case CUBEMAP: {
+            switch(modelType){
+                case TREE: {
+                    shader.setBool("isTree", true);
+                    shader.setVec3("color", material.diffuse);
+                    break;
+                } case SKYBOX: {
+                    shader.setBool("isTree", false);
+                    glActiveTexture(GL_TEXTURE0 + textures[0].texUnit);
+                    glBindTexture(GL_TEXTURE_CUBE_MAP, textures[0].id);
+                    shader.setInt("cubeMap", textures[0].texUnit);
+                    break;
+                }
+            }
         }
     }
 

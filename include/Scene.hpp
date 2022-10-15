@@ -14,8 +14,16 @@ class Scene {
         Model testModel;
 
         //Objects of the scene
+
         //Lamp Post(Cylinder) * 24
         Model lampPost;
+        //Light Sources(Sun + 25 * Over each lamp post)
+        Model sun;
+        vec3 sunPos; 
+        Model lamp;
+        vector<vec3> lampPos;
+
+        //Statues
         //Cuboidal Boxes * 20
         Model statueBase;
         //Obj Models
@@ -23,14 +31,18 @@ class Scene {
         Model armadillo; 
         Model dragon; 
         Model david; 
+
+        //Terrain
         //Road + Grass + Lake
         Model grass;
         Model lake;
         Model road;
-        //Sun + 25 * Over each lamp post
-        vector<Model> lightSources;
+
+        //Sky Box 
         //6 * Cube Faces
-        vector<Model> skyBox;
+        Model skyBox; 
+        Model tree1;
+        Model tree2; 
 
         //Book-keeping for Shaders/Textures
         unordered_map<ShaderType, Shader*> shaders;
@@ -45,6 +57,7 @@ class Scene {
         void createLampPosts();
         void createStatues();
         void createStatueHead(int i, int j); 
+        void createSkyBox();
          
     public:
         Scene();
