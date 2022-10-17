@@ -7,41 +7,57 @@ struct Vertex {
     vec3 pos;
     vec3 normal;
     vec2 texCoords;
+    vec3 tangent;
+    vec3 bitangent;
     Vertex(){
         pos = vec3(0.0f, 0.0f, 0.0f);
         normal = vec3(0.0f, 0.0f, 0.0f);
         texCoords = vec2(0.0f, 0.0f);
+        tangent = vec3(0.0f, 0.0f, 0.0f);
+        bitangent = vec3(0.0f, 0.0f, 0.0f);
     }
     Vertex(vec3 pos){
         this->pos = pos;
         this->normal = vec3(0.0f, 0.0f, 1.0f);
         this->texCoords = vec2(0.0f, 0.0f);
+        this->tangent = vec3(0.0f, 0.0f, 0.0f);
+        this->bitangent = vec3(0.0f, 0.0f, 0.0f);
     }
     Vertex(vec3 pos, vec3 normal){
         this->pos = pos;
         this->normal = normal;
         this->texCoords = vec2(0.0f, 0.0f);
+        this->tangent = vec3(0.0f, 0.0f, 0.0f);
+        this->bitangent = vec3(0.0f, 0.0f, 0.0f);
     }
     Vertex(vec3 pos, vec3 normal, vec2 texCoords){
         this->pos = pos;
         this->normal = normal;
         this->texCoords = texCoords;
+        this->tangent = vec3(0.0f, 0.0f, 0.0f);
+        this->bitangent = vec3(0.0f, 0.0f, 0.0f);
+    }
+    Vertex(vec3 pos, vec3 normal, vec2 texCoords, vec3 tangent, vec3 bitangent){
+        this->pos = pos;
+        this->normal = normal;
+        this->texCoords = texCoords;
+        this->tangent = tangent;
+        this->bitangent = bitangent;
     }
 };
 
 enum TextureType {
     DIFFUSE,
     SPECULAR, 
-    NORMAL, 
-    ENV,
-    DISP,
-    CUBE_MAP
+    CUBE_MAP,
+    NORMAL_MAP,
+    DEPTH_MAP,
+    ENV_MAP
 };
 
 struct Texture {
     unsigned int id;
     TextureType type;
-    int texUnit; 
 };
 
 struct Material {
@@ -70,15 +86,21 @@ enum ModelType {
     ARMADILLO,
     DRAGON,
     DAVID,
-    TREE
+    TREE,
+    SHADOW_MODEL,
+    BASE
 };
 
 enum ShaderType{
+    DEBUG,
     BASIC,
     TEXTURE,
     CUBEMAP,
     LIGHT,
-    SHADOW
+    SHADOW,
+    NORMAL,
+    DISP,
+    ENV
 };
 
 void buildSquare(vector<Vertex> &vertices, vector<unsigned int> &indices);

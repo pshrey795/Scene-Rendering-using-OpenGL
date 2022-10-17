@@ -26,6 +26,10 @@ void Mesh::addTransform(mat4 transform){
     modelTransforms.push_back(transform);
 }
 
+void Mesh::addTexture(Texture texture){
+    textures.push_back(texture);
+}
+
 void Mesh::setupMesh(){
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -50,6 +54,12 @@ void Mesh::setupMesh(){
     //Texture Coordinates
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoords));
+    //Tangents
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
+    //Bitangents
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
 
     glBindVertexArray(0);
 }
@@ -80,9 +90,9 @@ void Mesh::draw(Shader &shader, ModelType modelType, ShaderType shaderType){
             shader.setFloat("specularity", material.specularity);
             break;
         }case TEXTURE: {
-            glActiveTexture(GL_TEXTURE0 + textures[0].texUnit);
+            glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, textures[0].id);
-            shader.setInt("tex0", textures[0].texUnit);
+            shader.setInt("diffuseTexture",0);
             break;
         }case CUBEMAP: {
             switch(modelType){
@@ -92,19 +102,49 @@ void Mesh::draw(Shader &shader, ModelType modelType, ShaderType shaderType){
                     break;
                 } case SKYBOX: {
                     shader.setBool("isTree", false);
-                    glActiveTexture(GL_TEXTURE0 + textures[0].texUnit);
+                    glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_CUBE_MAP, textures[0].id);
-                    shader.setInt("cubeMap", textures[0].texUnit);
+                    shader.setInt("cubeMap", 0);
                     break;
                 }
             }
+            break;
+        }case NORMAL: {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textures[0].id);
+            shader.setInt("diffuseTexture",0);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, textures[1].id);
+            shader.setInt("normalTexture",1);
+            break;
+        }case DISP: {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textures[0].id);
+            shader.setInt("diffuseMap",0);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, textures[1].id);
+            shader.setInt("normalMap",1);
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, textures[2].id);
+            shader.setInt("depthMap",2);
+            break;
+        }case ENV: {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textures[0].id);
+            shader.setInt("lakeTexture",0);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, textures[1].id);
+            shader.setInt("pebbleTexture",1);
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, textures[2].id);
+            shader.setInt("cubeMap",2);
             break;
         }
     }
 
     glBindVertexArray(VAO);
     for(auto m : modelTransforms){
-        if(shaderType == BASIC || shaderType == TEXTURE){
+        if(shaderType == BASIC || shaderType == TEXTURE || shaderType == NORMAL || shaderType == DISP || shaderType == ENV || shaderType == DEBUG){
             shader.setMat3("normalViewMatrix", mat3(transpose(inverse(m))));
         }
         shader.setMat4("model", m);

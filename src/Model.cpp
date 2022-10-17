@@ -1,10 +1,9 @@
 #include "../include/Model.hpp"
 
 Model::Model(){
-    
 }
 
-Model::Model(ModelType modelType, unordered_map<ModelType, pair<int,unsigned int>> &texUnit){
+Model::Model(ModelType modelType){
     vector<Vertex> vertices;
     vector<unsigned int> indices;
     vector<Texture> textures; 
@@ -15,50 +14,44 @@ Model::Model(ModelType modelType, unordered_map<ModelType, pair<int,unsigned int
         case GRASS:{
             buildSquare(vertices, indices);
             Texture texture;
-            if(texUnit.find(GRASS) == texUnit.end()){
-                int n = texUnit.size();
-                texture.texUnit = n;
-                texture.id = getTextureFromFile("grass.jpeg", n);
-                texUnit.insert({GRASS, make_pair(n,texture.id)});
-            }else{
-                auto p = texUnit[GRASS];
-                texture.texUnit = p.first;
-                texture.id = p.second;
-            }
+            texture.id = getTextureFromFile("grass.jpeg");
             texture.type = DIFFUSE;
             textures.push_back(texture);
             break;
         }case LAKE:{
             buildSquare(vertices, indices);
             Texture texture;
-            if(texUnit.find(LAKE) == texUnit.end()){
-                int n = texUnit.size();
-                texture.texUnit = n;
-                texture.id = getTextureFromFile("water.jpeg", n);
-                texUnit.insert({LAKE, make_pair(n,texture.id)});
-            }else{
-                auto p = texUnit[LAKE];
-                texture.texUnit = p.first;
-                texture.id = p.second;
-            }
+            texture.id = getTextureFromFile("water.jpeg");
             texture.type = DIFFUSE;
             textures.push_back(texture);
+            Texture texture2;
+            texture2.id = getTextureFromFile("lake_floor.jpeg");
+            texture2.type = DIFFUSE;
+            textures.push_back(texture2);
+            Texture texture3;
+            setSTBIFlip(false);
+            texture3.id = getCubeMap("SkyBox");  
+            setSTBIFlip(false);
+            texture3.type = CUBE_MAP;
+            textures.push_back(texture3);
             break;
         }case ROAD:{
             buildSquare(vertices, indices);
             Texture texture;
-            if(texUnit.find(ROAD) == texUnit.end()){
-                int n = texUnit.size();
-                texture.texUnit = n;
-                texture.id = getTextureFromFile("road.jpeg", n);
-                texUnit.insert({ROAD, make_pair(n,texture.id)});
-            }else{
-                auto p = texUnit[ROAD];
-                texture.texUnit = p.first;
-                texture.id = p.second;
-            }
+            texture.id = getTextureFromFile("road.jpeg");
             texture.type = DIFFUSE;
             textures.push_back(texture);
+            Texture texture2;
+            texture2.id = getTextureFromFile("road_normal.jpeg");
+            texture2.type = NORMAL_MAP;
+            textures.push_back(texture2);
+            Texture texture3;
+            texture3.id = getTextureFromFile("road_disp.jpeg");
+            texture3.type = DEPTH_MAP;
+            textures.push_back(texture3);
+            break;
+        }case TEST: {
+            buildSquare(vertices, indices);
             break;
         }
     }
@@ -66,7 +59,7 @@ Model::Model(ModelType modelType, unordered_map<ModelType, pair<int,unsigned int
     meshes.push_back(Mesh(vertices, indices, textures));
 }
 
-Model::Model(string obj_path, unordered_map<ModelType, pair<int,unsigned int>> &texUnit, ModelType modelType){
+Model::Model(string obj_path, ModelType modelType){
     this->modelType = modelType;
     loadModel(objDir + obj_path); 
 
@@ -74,22 +67,21 @@ Model::Model(string obj_path, unordered_map<ModelType, pair<int,unsigned int>> &
     switch(modelType){
         case SKYBOX: {
             Texture texture;
-            if(texUnit.find(SKYBOX) == texUnit.end()){
-                int n = texUnit.size();
-                texture.texUnit = n;
-                setSTBIFlip(false);
-                texture.id = getCubeMap("SkyBox", n);  
-                setSTBIFlip(false);
-                texUnit.insert({SKYBOX, make_pair(n,texture.id)});
-            }else{
-                auto p = texUnit[SKYBOX];
-                texture.texUnit = p.first;
-                texture.id = p.second;
-            }
+            setSTBIFlip(false);
+            texture.id = getCubeMap("SkyBox");  
+            setSTBIFlip(false);
             texture.type = CUBE_MAP;
-            for(int i = 0; i < meshes.size(); i++){
-                meshes[i].textures.push_back(texture);
-            }
+            addTexture(texture);
+            break;
+        }case BASE: {
+            Texture texture; 
+            texture.id = getTextureFromFile("pedestal.jpg");
+            texture.type = DIFFUSE;
+            addTexture(texture);
+            Texture texture2;
+            texture2.id = getTextureFromFile("pedestal_normal.jpg");
+            texture2.type = NORMAL_MAP;
+            addTexture(texture2);
             break;
         }
     }
@@ -97,7 +89,7 @@ Model::Model(string obj_path, unordered_map<ModelType, pair<int,unsigned int>> &
 
 void Model::loadModel(string obj_path){
     Assimp::Importer importer;
-    const aiScene *scene = importer.ReadFile(obj_path, aiProcess_Triangulate | aiProcess_FlipUVs);
+    const aiScene *scene = importer.ReadFile(obj_path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals);
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode){
         cout << "ERROR::ASSIMP::" << importer.GetErrorString() << endl;
         return;
@@ -121,23 +113,40 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
 
     //Vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++){
-        Vertex vertex; 
-        vec3 pos; 
-        pos.x = mesh->mVertices[i].x; pos.y = mesh->mVertices[i].y; pos.z = mesh->mVertices[i].z;
-        vertex.pos = pos;
-
-        if(mesh->HasNormals()){
-            vec3 norm;
-            norm.x = mesh->mNormals[i].x; norm.y = mesh->mNormals[i].y; norm.z = mesh->mNormals[i].z;
-            vertex.normal = norm;
+        Vertex vertex;
+        vec3 v; 
+        // positions
+        v.x = mesh->mVertices[i].x;
+        v.y = mesh->mVertices[i].y;
+        v.z = mesh->mVertices[i].z;
+        vertex.pos = v;
+        // normals
+        if (mesh->HasNormals()){
+            v.x = mesh->mNormals[i].x;
+            v.y = mesh->mNormals[i].y;
+            v.z = mesh->mNormals[i].z;
+            vertex.normal = v;
         }
-
+        // texture coordinates
         if(mesh->mTextureCoords[0]){
-            vec2 tex;
-            tex.x = mesh->mTextureCoords[0][i].x; tex.y = mesh->mTextureCoords[0][i].y;
-            vertex.texCoords = tex;
+            glm::vec2 vec;
+            // a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't 
+            // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
+            vec.x = mesh->mTextureCoords[0][i].x; 
+            vec.y = mesh->mTextureCoords[0][i].y;
+            vertex.texCoords = vec;
+            // tangent
+            v.x = mesh->mTangents[i].x;
+            v.y = mesh->mTangents[i].y;
+            v.z = mesh->mTangents[i].z;
+            vertex.tangent = v;
+            // bitangent
+            v.x = mesh->mBitangents[i].x;
+            v.y = mesh->mBitangents[i].y;
+            v.z = mesh->mBitangents[i].z;
+            vertex.bitangent = v;
         }else{
-            vertex.texCoords = vec2(0.0f, 0.0f);
+            vertex.texCoords = glm::vec2(0.0f, 0.0f);
         }
         vertices.push_back(vertex);
     }
@@ -181,5 +190,11 @@ void Model::draw(Shader &shader, ShaderType shaderType) {
 void Model::addTransform(mat4 model){
     for(int i = 0; i < meshes.size(); i++){
         meshes[i].addTransform(model);
+    }
+}
+
+void Model::addTexture(Texture texture){
+    for(int i = 0; i < meshes.size(); i++){
+        meshes[i].addTexture(texture);
     }
 }

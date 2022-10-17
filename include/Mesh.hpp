@@ -17,6 +17,7 @@ class Mesh {
         void draw(Shader &shader, ModelType modelType, ShaderType shaderType);
 
         void addTransform(mat4 transform);
+        void addTexture(Texture texture);
 
     private:
         //Rendering Data

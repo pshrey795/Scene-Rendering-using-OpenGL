@@ -13,6 +13,10 @@ Scene::Scene(int argc, char** argv){
     shaders[CUBEMAP] = new Shader("CubeMap.vs", "CubeMap.fs");
     shaders[LIGHT] = new Shader("Light.vs", "Light.fs");
     shaders[SHADOW] = new Shader("Shadow.vs", "Shadow.fs");
+    shaders[DEBUG] = new Shader("Test.vs", "Test.fs");
+    shaders[NORMAL] = new Shader("Normal.vs", "Normal.fs");
+    shaders[DISP] = new Shader("Displacement.vs", "Displacement.fs");
+    shaders[ENV] = new Shader("Environment.vs", "Environment.fs");
 
     //User defined initializations
     createTerrain();
@@ -20,13 +24,13 @@ Scene::Scene(int argc, char** argv){
     createStatues();
     createSkyBox();
 
-    //Setup for Shadow Mapping
-    //Framebuffer
+    // Setup for Shadow Mapping
+    // Framebuffer
     shadowMap = FBuffer(gui->width, gui->height, SHADOW_MAP);
 
     //For testing purposes
-    // testModel = Model("david.obj");
-    // testModel.updateTransform(translate(mat4(1.0f), vec3(0.0f, 10.0f, 0.0f)));
+    testModel = Model(TEST);
+    testModel.addTransform(scale(mat4(1.0f), vec3(10.0f, 10.0f, 10.0f)));
 }
 
 void Scene::init(){
@@ -53,7 +57,10 @@ void Scene::run(){
 
         //Drawing Space
         sunDirection = getSunDir();
+        sunPos = convertDirToPos(sunDirection, 100.0f);
+        this->fillShadowMap(sunPos, false);
         this->draw();
+        // this->testDraw();
 
         gui->swapBuffers();
         glfwPollEvents();
@@ -69,15 +76,18 @@ void Scene::fillShadowMap(vec3 lightPos, bool directional){
     //Setting Up Light Transforms 
     mat4 lightProjection, lightView, lightSpaceMatrix;
     float nearPlane = 0.1f;
-    float farPlane = 500.0f;
+    //Set far plane to infinity
+    float farPlane = INFINITY;
     if(directional){
-        lightProjection = ortho(-200.0f, 200.0f, -200.0f, 200.0f, nearPlane, farPlane);
-        lightPos = convertDirToPos(lightPos, 200.0f);
+        lightProjection = ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
+        lightPos = convertDirToPos(lightPos, 150.0f);
     }else{
         lightProjection = perspective(radians(45.0f), (float)shadowMap.width / (float)shadowMap.height, nearPlane, farPlane);
     }
     lightView = lookAt(lightPos, vec3(0.0f), vec3(0.0f, 1.0f, 0.0f));
     lightSpaceMatrix = lightProjection * lightView;
+    sunSpaceMatrix = lightSpaceMatrix;
+    sunPos = lightPos;
 
     //Setting Up Shader
     shadowShader->use();
@@ -100,7 +110,26 @@ void Scene::fillShadowMap(vec3 lightPos, bool directional){
     dragon.draw(*shadowShader, SHADOW);
     david.draw(*shadowShader, SHADOW);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    shadowMap.deactivateBuffer();
+}
+
+void Scene::testDraw(){
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    Shader*& testShader = shaders[DEBUG];
+
+    mat4 viewMatrix = gui->camera->getViewMatrix();
+    mat4 perspectiveMatrix = gui->camera->getPerspectiveMatrix();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, shadowMap.getTextureID());
+
+    testShader->use();
+    testShader->setMat4("view", viewMatrix);
+    testShader->setMat4("projection", perspectiveMatrix);
+    testShader->setInt("depthMap", 0);
+    testModel.draw(*testShader, DEBUG);
 }
 
 void Scene::draw(){
@@ -111,6 +140,9 @@ void Scene::draw(){
     Shader*& basicShader = shaders[BASIC];
     Shader*& cubeMapShader = shaders[CUBEMAP];
     Shader*& lightShader = shaders[LIGHT];
+    Shader*& normalShader = shaders[NORMAL];
+    Shader*& dispShader = shaders[DISP];
+    Shader*& envShader = shaders[ENV];
 
     mat4 viewMatrix = gui->camera->getViewMatrix();
     mat4 perspectiveMatrix = gui->camera->getPerspectiveMatrix();
@@ -119,17 +151,52 @@ void Scene::draw(){
 
     //Terrain
     textureShader->use();
+    textureShader->setBool("isDay", isDay);
+    textureShader->setMat4("lightSpaceMatrix", sunSpaceMatrix);
+    textureShader->setVec3("lightPos", sunPos);
+    textureShader->setVec3("viewPos", gui->camera->Position);
     textureShader->setMat4("view", viewMatrix);
     textureShader->setMat4("projection", perspectiveMatrix); 
+    for(int i = 0; i < 24; i++){
+        string lampName = "lampPos[" + to_string(i) + "]";
+        textureShader->setVec3(lampName, lampPos[i]);
+    }
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, shadowMap.getTextureID());
+    textureShader->setInt("shadowMap", 1);
 
     //Grass
     grass.draw(*textureShader, TEXTURE);
 
     //Lake
-    lake.draw(*textureShader, TEXTURE);
+    envShader->use();
+    envShader->setBool("isDay", isDay);
+    envShader->setMat4("view", viewMatrix);
+    envShader->setMat4("projection", perspectiveMatrix);
+    envShader->setFloat("blendFactor", 0.2f);
+    envShader->setVec3("cameraPos", gui->camera->Position);
+    for(int i = 0; i < 24; i++){
+        string lampName = "lampPos[" + to_string(i) + "]";
+        envShader->setVec3(lampName, lampPos[i]);
+    }
+    // textureShader->use();
+    // lake.draw(*textureShader, TEXTURE);
+    lake.draw(*envShader, ENV);
 
     //Roads
-    road.draw(*textureShader, TEXTURE);
+    dispShader->use();
+    dispShader->setBool("isDay", isDay);
+    dispShader->setMat4("view", viewMatrix);
+    dispShader->setMat4("projection", perspectiveMatrix);
+    dispShader->setVec3("viewPos", gui->camera->Position);
+    dispShader->setVec3("lightDir", sunDirection);
+    for(int i = 0; i < 24; i++){
+        string lampName = "lampPos[" + to_string(i) + "]";
+        dispShader->setVec3(lampName, lampPos[i]);
+    }
+    dispShader->setFloat("height_scale", 0.5);
+    road.draw(*dispShader, DISP);
 
     //Lamp Posts
     basicShader->use();
@@ -153,8 +220,19 @@ void Scene::draw(){
 
     //Statues
     //Statue Bases
+    normalShader->use();
+    normalShader->setBool("isDay", isDay);
+    normalShader->setMat4("view", viewMatrix);
+    normalShader->setMat4("projection", perspectiveMatrix);
+    normalShader->setVec3("lightDir", sunDirection);
+    for(int i = 0; i < 24; i++){
+        string lampName = "lampPos[" + to_string(i) + "]";
+        normalShader->setVec3(lampName, lampPos[i]);
+    }
+    statueBase.draw(*normalShader, NORMAL);
+
     basicShader->use();
-    statueBase.draw(*basicShader, BASIC);
+    // statueBase.draw(*basicShader, BASIC);
 
     //Statue Heads
     //Bunny
@@ -195,15 +273,15 @@ void Scene::draw(){
 //Drawing routines
 void Scene::createTerrain(){
     //Grass
-    grass = Model(GRASS, texUnit);
+    grass = Model(GRASS);
     grass.addTransform(getTransform(vec3(200.0f, 200.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(40.0f, 0.0f, -100.0f)));
 
     //Lake 
-    lake = Model(LAKE, texUnit);
+    lake = Model(LAKE);
     lake.addTransform(getTransform(vec3(20.0f, 60.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(40.0f, 0.1f, -100.0f)));
 
     //Roads
-    road = Model(ROAD, texUnit);
+    road = Model(ROAD);
     mat4 transform; 
     road.addTransform(getTransform(vec3(20.0f, 80.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(0.0f, 0.1f, -80.0f)));
     road.addTransform(getTransform(vec3(40.0f, 20.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), -90.0f, vec3(20.0f, 0.1f, -180.0f)));
@@ -213,8 +291,8 @@ void Scene::createTerrain(){
 
 void Scene::createLampPosts(){
     //24 Cylinders in a 6 * 4 grid
-    lampPost = Model("cylinder.obj", texUnit); 
-    lamp = Model("sphere.obj", texUnit);
+    lampPost = Model("cylinder.obj"); 
+    lamp = Model("sphere.obj");
 
     //Create an array of vec3 of size 24
     lampPos = new vec3[24];
@@ -230,11 +308,11 @@ void Scene::createLampPosts(){
 }
 
 void Scene::createStatues(){
-    statueBase = Model("cuboid.obj", texUnit);
-    bunny = Model("bunny.obj", texUnit, BUNNY);
-    armadillo = Model("armadillo.obj", texUnit, ARMADILLO);
-    dragon = Model("dragon.obj", texUnit, DRAGON);
-    david = Model("david.obj", texUnit, DAVID);
+    statueBase = Model("cuboid.obj", BASE);
+    bunny = Model("bunny.obj", BUNNY);
+    armadillo = Model("armadillo.obj", ARMADILLO);
+    dragon = Model("dragon.obj", DRAGON);
+    david = Model("david.obj", DAVID);
     mat4 transform;
     for(int i = 0; i < 7; i++){
         if(i==0 || i==6){
@@ -310,11 +388,11 @@ void Scene::createStatueHead(int i, int j){
 }
 
 void Scene::createSkyBox(){
-    skyBox = Model("cuboid.obj", texUnit, SKYBOX);
+    skyBox = Model("cuboid.obj", SKYBOX);
     skyBox.addTransform(getTransform(vec3(1.0f, 1.0f, 1.0f), vec3(0.0f, 1.0f, 0.0f), 0.0f, vec3(0.0f, 0.0f, 0.0f)));
 
-    tree1 = Model("Trees/tree1.obj", texUnit, TREE);
-    tree2 = Model("Trees/tree2.obj", texUnit, TREE);
+    tree1 = Model("Trees/tree1.obj", TREE);
+    tree2 = Model("Trees/tree2.obj", TREE);
 
     for(unsigned int i = 0; i < 12; i++){
         float theta = (float)i * 30.0f; 

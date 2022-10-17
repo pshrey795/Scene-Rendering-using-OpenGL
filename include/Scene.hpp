@@ -20,6 +20,8 @@ class Scene {
         Model lampPost;
         //Light Sources(Sun + 24 * Over each lamp post)
         vec3 sunDirection; 
+        vec3 sunPos; 
+        mat4 sunSpaceMatrix;
         Model lamp;
         vec3* lampPos; //Array of 24 lamp positions
 
@@ -46,7 +48,6 @@ class Scene {
 
         //Book-keeping for Shaders/Textures
         unordered_map<ShaderType, Shader*> shaders;
-        unordered_map<ModelType, pair<int, unsigned int>> texUnit;
 
         //Shadow Mapping
         FBuffer shadowMap;
@@ -70,6 +71,7 @@ class Scene {
         void run(); 
         void end(); 
         void draw();
+        void testDraw();
 
 };
 

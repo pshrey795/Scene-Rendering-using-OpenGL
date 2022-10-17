@@ -40,7 +40,7 @@ vec3 convertDirToPos(vec3 dir, float dist = 100.0f, vec3 origin = vec3(0.0f));
 void setSTBIFlip(bool flip);
 
 //Extracting new textures
-unsigned int getTextureFromFile(string fileName, int texUnit = 0);
-unsigned int getCubeMap(string fileDir, int texUnit = 0);
+unsigned int getTextureFromFile(string fileName);
+unsigned int getCubeMap(string fileDir);
 
 #endif

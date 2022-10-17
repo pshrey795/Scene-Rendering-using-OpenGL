@@ -41,7 +41,7 @@ vec3 getSunDir(){
         //Extract time from currentTime
         time_t time = chrono::system_clock::to_time_t(currentTime);
         //Extract the current hour from time
-        int hour = 20;//localtime(&time)->tm_hour;
+        int hour = localtime(&time)->tm_hour;
         float sun_theta = radians(-90.0f + 15.0f * hour);
         float sun_x = cos(sun_theta) * cos(radians(SUN_PHI));
         float sun_y = sin(sun_theta);
@@ -60,7 +60,7 @@ void setSTBIFlip(bool flip){
     stbi_set_flip_vertically_on_load(flip);
 }
 
-unsigned int getTextureFromFile(string fileName, int texUnit){
+unsigned int getTextureFromFile(string fileName){
     string path = texDir + fileName;
     unsigned int textureID;
     glGenTextures(1, &textureID);
@@ -75,7 +75,6 @@ unsigned int getTextureFromFile(string fileName, int texUnit){
         }else if (nrComponents == 4){
             format = GL_RGBA;
         }
-        glActiveTexture(GL_TEXTURE0 + texUnit);
         glBindTexture(GL_TEXTURE_2D, textureID);
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
@@ -91,11 +90,10 @@ unsigned int getTextureFromFile(string fileName, int texUnit){
     return textureID;
 }
 
-unsigned int getCubeMap(string fileDir, int texUnit){
+unsigned int getCubeMap(string fileDir){
     string pathDir = texDir + fileDir;
     unsigned int textureID;
     glGenTextures(1, &textureID);
-    glActiveTexture(GL_TEXTURE0 + texUnit);
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
     int width, height, nrComponents;
