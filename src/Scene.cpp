@@ -12,12 +12,17 @@ Scene::Scene(int argc, char** argv){
     shaders[TEXTURE] = new Shader("Textured.vs", "Textured.fs");
     shaders[CUBEMAP] = new Shader("CubeMap.vs", "CubeMap.fs");
     shaders[LIGHT] = new Shader("Light.vs", "Light.fs");
+    shaders[SHADOW] = new Shader("Shadow.vs", "Shadow.fs");
 
     //User defined initializations
     createTerrain();
     createLampPosts();
     createStatues();
     createSkyBox();
+
+    //Setup for Shadow Mapping
+    //Framebuffer
+    shadowMap = FBuffer(gui->width, gui->height, SHADOW_MAP);
 
     //For testing purposes
     // testModel = Model("david.obj");
@@ -41,8 +46,6 @@ void Scene::run(){
     glEnable(GL_DEPTH_TEST);
     while(!gui->shouldClose()){
         gui->processInput();
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //Update time
         currentTime = glfwGetTime();
@@ -58,7 +61,52 @@ void Scene::run(){
     this->end();
 }
 
+//By default, we will model the sun as a directional light
+//Other light sources will be point lights
+void Scene::fillShadowMap(vec3 lightPos, bool directional){
+    Shader*& shadowShader = shaders[SHADOW];
+
+    //Setting Up Light Transforms 
+    mat4 lightProjection, lightView, lightSpaceMatrix;
+    float nearPlane = 0.1f;
+    float farPlane = 500.0f;
+    if(directional){
+        lightProjection = ortho(-200.0f, 200.0f, -200.0f, 200.0f, nearPlane, farPlane);
+        lightPos = convertDirToPos(lightPos, 200.0f);
+    }else{
+        lightProjection = perspective(radians(45.0f), (float)shadowMap.width / (float)shadowMap.height, nearPlane, farPlane);
+    }
+    lightView = lookAt(lightPos, vec3(0.0f), vec3(0.0f, 1.0f, 0.0f));
+    lightSpaceMatrix = lightProjection * lightView;
+
+    //Setting Up Shader
+    shadowShader->use();
+    shadowShader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+
+    //Drawing to Shadow Map
+    glViewport(0, 0, shadowMap.width, shadowMap.height);
+    shadowMap.activateBuffer();
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+    //Drawing Space
+    grass.draw(*shadowShader, SHADOW);
+    lake.draw(*shadowShader, SHADOW);
+    road.draw(*shadowShader, SHADOW);
+    lampPost.draw(*shadowShader, SHADOW);
+    lamp.draw(*shadowShader, SHADOW);
+    statueBase.draw(*shadowShader, SHADOW);
+    bunny.draw(*shadowShader, SHADOW);
+    armadillo.draw(*shadowShader, SHADOW);
+    dragon.draw(*shadowShader, SHADOW);
+    david.draw(*shadowShader, SHADOW);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 void Scene::draw(){
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     Shader*& textureShader = shaders[TEXTURE];
     Shader*& basicShader = shaders[BASIC];
     Shader*& cubeMapShader = shaders[CUBEMAP];
@@ -67,14 +115,10 @@ void Scene::draw(){
     mat4 viewMatrix = gui->camera->getViewMatrix();
     mat4 perspectiveMatrix = gui->camera->getPerspectiveMatrix();
 
-    bool isDay = (sunDirection.y < 0.0f);
-    for(auto s : shaders){
-        s.second->setBool("isDay", isDay);
-    }
+    bool isDay = (sunDirection[1] < 0.0f);
 
     //Terrain
     textureShader->use();
-    textureShader->setVec3("sunDir", sunDirection);
     textureShader->setMat4("view", viewMatrix);
     textureShader->setMat4("projection", perspectiveMatrix); 
 
@@ -89,14 +133,20 @@ void Scene::draw(){
 
     //Lamp Posts
     basicShader->use();
+    basicShader->setBool("isDay", isDay);
     basicShader->setVec3("viewPos", gui->camera->Position);
     basicShader->setVec3("sunDir", sunDirection);
+    for(int i = 0; i < 24; i++){
+        string lampName = "lampPos[" + to_string(i) + "]";
+        basicShader->setVec3(lampName, lampPos[i]);
+    }
     basicShader->setMat4("view", viewMatrix);
     basicShader->setMat4("projection", perspectiveMatrix);
     lampPost.draw(*basicShader, BASIC);
 
     //Lamp Lights
     lightShader->use();
+    lightShader->setBool("isDay", isDay);
     lightShader->setMat4("view", viewMatrix);
     lightShader->setMat4("projection", perspectiveMatrix);
     lamp.draw(*lightShader, LIGHT);
@@ -122,6 +172,7 @@ void Scene::draw(){
     //Skybox and Billboarded Trees
     glDepthFunc(GL_LEQUAL);
     cubeMapShader->use();
+    cubeMapShader->setBool("isDay", isDay);
     //Any translation from the camera should not affect the skybox
     cubeMapShader->setMat4("projection", gui->camera->getPerspectiveMatrix());
     mat4 newViewMatrix = mat4(mat3(gui->camera->getViewMatrix()));
@@ -164,20 +215,18 @@ void Scene::createLampPosts(){
     //24 Cylinders in a 6 * 4 grid
     lampPost = Model("cylinder.obj", texUnit); 
     lamp = Model("sphere.obj", texUnit);
+
+    //Create an array of vec3 of size 24
+    lampPos = new vec3[24];
+
     for(int i = 0; i < 6;i++){
         for(int j = 0; j < 4;j++){
             vec3 newLightPos = vec3(j * 40.0f - 20.0f, 16.5f, i * -40.0f);
             lampPost.addTransform(getTransform(vec3(1.0f, 10.0f, 1.0f), vec3(1.0f, 0.0f, 0.0f), 0.0f, vec3(j * 40.0f - 20.0f, 5.0f, i * -40.0f)));
-            lamp.addTransform(getTransform(vec3(1.5f, 1.5f, 1.5f), vec3(1.0f, 0.0f, 0.0f), 0.0f, vec3(j * 40.0f - 20.0f, 16.5f, i * -40.0f)));
-            string lightName = "lampPos[" + to_string(lampPos.size()) + "]";
-            lampPos.push_back(newLightPos);
-            shaders[BASIC]->setVec3(lightName, newLightPos);
-            shaders[TEXTURE]->setVec3(lightName, newLightPos);
+            lamp.addTransform(getTransform(vec3(1.5f, 1.5f, 1.5f), vec3(1.0f, 0.0f, 0.0f), 0.0f, newLightPos));
+            lampPos[i * 4 + j] = newLightPos;
         }
     }
-    int n = lampPos.size();
-    shaders[BASIC]->setInt("numLamps", n);
-    shaders[TEXTURE]->setInt("numLamps", n);
 }
 
 void Scene::createStatues(){

@@ -24,9 +24,6 @@ class Model{
         void processNode(aiNode *node, const aiScene *scene);
         Mesh processMesh(aiMesh *mesh, const aiScene *scene);
 
-        //Extracting a new texture from an image file 
-        unsigned int getTextureFromFile(string fileName, int texUnit);
-        unsigned int getCubeMap(string fileDir, int texUnit);
 };
 
 #endif

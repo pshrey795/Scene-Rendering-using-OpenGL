@@ -35,7 +35,6 @@ enum TextureType {
     NORMAL, 
     ENV,
     DISP,
-    SHADOW,
     CUBE_MAP
 };
 
@@ -62,6 +61,7 @@ struct Material {
 
 enum ModelType {
     NONE,
+    TEST,
     GRASS, 
     ROAD, 
     LAKE, 
@@ -77,7 +77,8 @@ enum ShaderType{
     BASIC,
     TEXTURE,
     CUBEMAP,
-    LIGHT
+    LIGHT,
+    SHADOW
 };
 
 void buildSquare(vector<Vertex> &vertices, vector<unsigned int> &indices);

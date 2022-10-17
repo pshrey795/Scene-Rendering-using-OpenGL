@@ -98,6 +98,7 @@ void Mesh::draw(Shader &shader, ModelType modelType, ShaderType shaderType){
                     break;
                 }
             }
+            break;
         }
     }
 

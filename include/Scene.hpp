@@ -4,6 +4,7 @@
 #include "gui.hpp"
 #include "Model.hpp"
 #include "Shader.hpp"
+#include "Framebuffer.hpp"
 
 class Scene {
 
@@ -17,11 +18,10 @@ class Scene {
 
         //Lamp Post(Cylinder) * 24
         Model lampPost;
-        //Light Sources(Sun + 25 * Over each lamp post)
+        //Light Sources(Sun + 24 * Over each lamp post)
         vec3 sunDirection; 
         Model lamp;
-        vector<vec3> lampPos;
-        vector<bool> lampState;
+        vec3* lampPos; //Array of 24 lamp positions
 
         //Statues
         //Cuboidal Boxes * 20
@@ -47,7 +47,11 @@ class Scene {
         //Book-keeping for Shaders/Textures
         unordered_map<ShaderType, Shader*> shaders;
         unordered_map<ModelType, pair<int, unsigned int>> texUnit;
-         
+
+        //Shadow Mapping
+        FBuffer shadowMap;
+        void fillShadowMap(vec3 lightPos, bool directional = true);
+
         //Time keeping
         int frameCounter;
         float currentTime;

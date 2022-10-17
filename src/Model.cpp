@@ -1,10 +1,7 @@
 #include "../include/Model.hpp"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "../external/stb_image.h"
-
 Model::Model(){
-
+    
 }
 
 Model::Model(ModelType modelType, unordered_map<ModelType, pair<int,unsigned int>> &texUnit){
@@ -80,9 +77,9 @@ Model::Model(string obj_path, unordered_map<ModelType, pair<int,unsigned int>> &
             if(texUnit.find(SKYBOX) == texUnit.end()){
                 int n = texUnit.size();
                 texture.texUnit = n;
-                stbi_set_flip_vertically_on_load(false);
+                setSTBIFlip(false);
                 texture.id = getCubeMap("SkyBox", n);  
-                stbi_set_flip_vertically_on_load(false);
+                setSTBIFlip(false);
                 texUnit.insert({SKYBOX, make_pair(n,texture.id)});
             }else{
                 auto p = texUnit[SKYBOX];
@@ -185,73 +182,4 @@ void Model::addTransform(mat4 model){
     for(int i = 0; i < meshes.size(); i++){
         meshes[i].addTransform(model);
     }
-}
-
-unsigned int Model::getTextureFromFile(string fileName, int texUnit){
-    string path = texDir + fileName;
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
-    int width, height, nrComponents;
-    unsigned char *data = stbi_load(path.c_str(), &width, &height, &nrComponents, 0);
-    if(data){
-        GLenum format;
-        if (nrComponents == 1){
-            format = GL_RED;
-        }else if (nrComponents == 3){
-            format = GL_RGB;
-        }else if (nrComponents == 4){
-            format = GL_RGBA;
-        }
-        glActiveTexture(GL_TEXTURE0 + texUnit);
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }else{
-        cout << "Texture failed to load at path: " << path << endl;
-    }
-    stbi_image_free(data);
-    return textureID;
-}
-
-unsigned int Model::getCubeMap(string fileDir, int texUnit){
-    string pathDir = texDir + fileDir;
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
-    glActiveTexture(GL_TEXTURE0 + texUnit);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-
-    int width, height, nrComponents;
-    unsigned char *data;
-    for(unsigned int i = 0; i < 6; i++){
-        string filePath = pathDir + "/" + to_string(i+1) + ".jpg";
-        data = stbi_load(filePath.c_str(), &width, &height, &nrComponents, 0);
-        GLenum format;
-        if (nrComponents == 1){
-            format = GL_RED;
-        }else if (nrComponents == 3){
-            format = GL_RGB;
-        }else if (nrComponents == 4){
-            format = GL_RGBA;
-        }
-        if(data){
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        }else{
-            cout << "Cubemap tex failed to load at path: " << filePath << endl;
-        }
-        stbi_image_free(data);
-    }
-
-    //Setting Parameters
-    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    return textureID; 
 }
